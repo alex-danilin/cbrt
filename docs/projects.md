@@ -1,0 +1,20 @@
+# Project tracking (`cbrt projects`)
+
+`cbrt projects` shows every project you are building on one local page: the goal, what is being worked on now, progress per milestone, the next tasks and the last commit. At the top are the tasks done across all projects, how many are active, stale or checked on track, and a chart of commits per week over the last 12 weeks; each card has a progress ring and its own 12-week commit sparkline. Each project keeps its plan in a `PLAN.md` in its own repository, and any agent (Claude Code, Codex CLI, Antigravity) keeps it current because a short rule block in `AGENTS.md` tells it how. No API key is involved.
+
+```sh
+cbrt projects connect ~/work/inkwell --dry-run   # shows what it would do; nothing is written
+cbrt projects connect ~/work/inkwell             # git init if needed, PLAN.md, README.md skeleton, AGENTS.md rule
+cbrt projects                                    # the page at http://127.0.0.1:8091/ (opens the browser; --no-open, --listen)
+cbrt projects check inkwell --agent codex        # does the work follow the plan? (--dry-run prints the prompt)
+```
+
+`connect` never overwrites a file: it creates what is missing (with `--agent claude|codex|agy`, that agent writes the overview of a new README; if it fails, the skeleton stays and `PLAN.md` gets a task for it), appends the rule block to an existing `AGENTS.md` and adds `@AGENTS.md` to an existing `CLAUDE.md` (Claude Code reads `AGENTS.md` itself only when there is no `CLAUDE.md`; connect creates none). After a `git init` it commits only the files it created. Running it again changes nothing. It refuses your home folder, a drive root and temp folders. `cbrt projects list` prints one line per project; `cbrt projects disconnect <name> [--remove-files]` stops tracking one (`--remove-files` also removes the `AGENTS.md` rule block; `PLAN.md` stays). The list lives in `<config dir>/cbrt/projects.json` (or `CBRT_PROJECTS_HOME`) and stores each folder's full path: after moving a project folder, its card says "folder missing" until you run `cbrt projects disconnect <name>` and then `cbrt projects connect <new folder>` (the repository, `PLAN.md` and checks move with the folder; connect finds them and creates nothing).
+
+The page answers only on loopback. On each card you can park a task (`[ ]` or `[>]` becomes `[~]`) or unpark it: cbrt changes that one character in `PLAN.md` and refuses when the file changed since the page was loaded. Its forms only work from the page itself (same origin and a per-run token).
+
+`check` runs the agent CLI headless and read-only in the project folder (Claude Code in plan mode with only Read/Grep/Glob and no MCP servers, Codex in its read-only sandbox with MCP servers off, Antigravity in plan mode with its sandbox; never a permission-skipping flag; 10-minute limit, `--timeout`, which stops the agent's whole process tree). The prompt holds `PLAN.md`, the commits since the last check (or the last 30) with their diffstat, and the previous verdict. The answer starts with `Verdict: on track`, `drifting` or `off track` (an answer without one is saved as `unknown`) and is saved to `.cbrt/checks/<UTC time>-<agent>.md`, which cbrt never commits. The page shows the newest verdict, and its "Run check" button runs one in the background.
+
+Your plan stays private: when a repository is public (asked anonymously of GitHub or GitLab; any other host, or a failed check, counts as public), `connect` keeps `PLAN.md`, `.cbrt/` and an `AGENTS.md` it created out of git through a block in `.git/info/exclude`, never `.gitignore`. `--public` or `--private` skips the check, and connect prints the `git rm --cached` command for a file that is already tracked instead of changing history.
+
+In `PLAN.md`, milestones are `##` headings and tasks are `- [ ]` lines: `[>]` in progress, `[x]` done (with evidence after an em dash), `[~]` parked (left out of progress). Anything else is free text. Only you park tasks: the rule block tells agents never to write `[~]` themselves (deferred work stays `[ ]`) and never to change a parked task.

@@ -1,0 +1,1 @@
+{"error":{"message":"{\"error\":{\"code\":400,\"message\":\"prompt holds 9000 tokens but the loaded context fits only 2048 tokens\",\"type\":\"exceed_context_size_error\",\"n_prompt_tokens\":9000,\"n_ctx\":2048}}","type":"invalid_request_error","param":null,"code":null}}

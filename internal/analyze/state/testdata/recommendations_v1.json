@@ -1,0 +1,27 @@
+{
+  "v": 1,
+  "items": [
+    {"rec_id": "r_1", "created_run_id": "20260901T090000Z", "created_at": "2026-09-01T09:00:00Z",
+     "title": "Document the test command", "category": "instructions",
+     "evidence_refs": ["claude/projects/s1#4", "claude/projects/s2#9"],
+     "cause": "agent guesses the test command", "alternatives": "command changed",
+     "change": "add the command to AGENTS.md", "cost_minutes": 5, "confidence": "med",
+     "baseline": {"metric": "failed_test_runs", "value": 0},
+     "check_method": "failed_test_runs halves", "min_evidence": ">= 5 sessions", "eval_window_days": 7,
+     "impl_status": "proposed", "eval_status": "pending"},
+    {"rec_id": "r_2", "created_at": "2026-09-01T09:00:00Z",
+     "title": "Allow go test", "category": "permission_allowlist", "evidence_refs": ["codex/sessions/s3#2"],
+     "cause": "permission waits", "alternatives": "slow tests", "change": "allowlist go test",
+     "cost_minutes": 2, "confidence": "high", "baseline": {"metric": "permission_waits", "value": 12.5},
+     "check_method": "waits drop", "min_evidence": ">= 3 sessions", "eval_window_days": 14,
+     "impl_status": "applied", "impl_at": "2026-09-02T10:00:00Z", "impl_notes": "done",
+     "eval_status": "associated_improvement", "eval_run_id": "20260920T090000Z", "eval_notes": "waits 12.5 -> 3"},
+    {"rec_id": "r_3", "created_at": "2026-09-01T09:00:00Z",
+     "title": "Use a cheaper model for search", "category": "model_policy", "evidence_refs": ["claude/projects/s4#1"],
+     "cause": "large model for grep", "alternatives": "none seen", "change": "set subagent model",
+     "cost_minutes": 10, "confidence": "low", "baseline": {"metric": "tokens_per_task", "value": 40000},
+     "check_method": "tokens drop", "min_evidence": ">= 5 tasks", "eval_window_days": 7,
+     "impl_status": "declined", "impl_at": "2026-09-03T08:00:00Z", "impl_notes": "quality matters more",
+     "eval_status": "pending"}
+  ]
+}

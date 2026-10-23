@@ -1,0 +1,57 @@
+{
+  "listen": "0.0.0.0:8080",
+  "api_key": "${CBRT_API_KEY}",
+  "trust_proxy": true,
+  "trusted_proxies": ["172.16.0.0/12"],
+  "data_dir": "/data",
+  "offline": false,
+
+  "providers": [
+    {
+      "id": "nvidia",
+      "type": "openai",
+      "location": "cloud",
+      "base_url": "https://integrate.api.nvidia.com/v1",
+      "api_key": "${NVIDIA_API_KEY}",
+      "auth_patterns": ["authorization failed"]
+    },
+    {
+      "id": "ollama",
+      "type": "ollama",
+      "location": "local",
+      "base_url": "${OLLAMA_BASE_URL}"
+    }
+  ],
+
+  "routes": {
+    "default": [
+      { "provider": "nvidia", "model": "openai/gpt-oss-20b", "first_byte_timeout": "20s",
+        "capabilities": ["tools", "json"], "max_context": 131072 },
+      { "provider": "ollama", "model": "gemma-4-e2b-4-32k", "capabilities": ["tools"], "max_context": 32768,
+        "token_param": "max_tokens", "tool_choice_required": false }
+    ],
+    "deep": [
+      { "provider": "nvidia", "model": "deepseek-ai/deepseek-v4.1-flash", "first_byte_timeout": "180s",
+        "capabilities": ["tools", "json"], "max_context": 1048576, "tool_choice_required": false },
+      { "provider": "nvidia", "model": "openai/gpt-oss-20b", "first_byte_timeout": "20s", "max_context": 131072 },
+      { "provider": "ollama", "model": "gemma-4-e2b-4-32k", "max_context": 32768, "token_param": "max_tokens",
+        "tool_choice_required": false }
+    ],
+    "vision": [
+      { "provider": "ollama", "model": "minicpm-v4.6-32k", "capabilities": ["tools", "vision"], "max_context": 32768,
+        "token_param": "max_tokens", "tool_choice_required": false }
+    ],
+    "claude-*": [
+      { "provider": "nvidia", "model": "openai/gpt-oss-20b", "first_byte_timeout": "30s", "capabilities": ["tools"],
+        "max_context": 131072 },
+      { "provider": "ollama", "model": "gemma-4-e2b-4-32k", "capabilities": ["tools"], "max_context": 32768,
+        "token_param": "max_tokens", "tool_choice_required": false }
+    ],
+    "coder": [
+      { "provider": "nvidia", "model": "openai/gpt-oss-20b", "first_byte_timeout": "60s", "capabilities": ["tools"],
+        "max_context": 131072, "reasoning": "reasoning_content" },
+      { "provider": "ollama", "model": "gemma-4-e2b-4-32k", "capabilities": ["tools"], "max_context": 32768,
+        "token_param": "max_tokens", "tool_choice_required": false }
+    ]
+  }
+}

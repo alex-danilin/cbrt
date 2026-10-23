@@ -1,0 +1,86 @@
+# systemd unit for cbrt. See docs/deploy.md ("Linux: systemd").
+#
+#   useradd --system --no-create-home --home-dir /var/lib/cbrt --shell /usr/sbin/nologin cbrt
+#   install -m 0755 dist/cbrt-linux-amd64 /usr/local/bin/cbrt
+#   install -d -m 0750 -o root -g cbrt /etc/cbrt
+#   install -m 0640 -o root -g cbrt cbrt.json /etc/cbrt/cbrt.json   # "data_dir": "/var/lib/cbrt"
+#   install -m 0640 -o root -g cbrt .env /etc/cbrt/.env                   # CBRT_API_KEY=..., NVIDIA_API_KEY=...
+#   install -m 0644 deploy/cbrt.service /etc/systemd/system/cbrt.service
+#   systemctl daemon-reload && systemctl enable --now cbrt
+#
+# The service user can read its config and secrets but not modify them. cbrt loads .env
+# itself (rather than EnvironmentFile=) so that POST /api/reload re-reads it.
+#
+# Reload: cbrt has no SIGHUP handler (ExecReload is intentionally absent). Re-read
+# cbrt.json and .env with
+#   curl -fsS -X POST -H "Authorization: Bearer $CBRT_API_KEY" http://127.0.0.1:8080/api/reload
+# Changing listen/TLS settings needs `systemctl restart cbrt`.
+#
+# DynamicUser alternative (no static account): replace User=/Group= with DynamicUser=yes, keep
+# /etc/cbrt/.env root-only (0600) and hand it over as a credential:
+#   LoadCredential=env:/etc/cbrt/.env
+#   ExecStart=
+#   ExecStart=/usr/local/bin/cbrt serve -config /etc/cbrt/cbrt.json -env-file %d/env
+# (cbrt.json then needs mode 0644; it holds only ${VAR} references. Credentials are copied at
+# start, so .env changes need a restart instead of /api/reload.)
+
+[Unit]
+Description=cbrt gateway for free LLM providers
+Wants=network-online.target
+After=network-online.target ollama.service
+
+[Service]
+Type=simple
+User=cbrt
+Group=cbrt
+ExecStart=/usr/local/bin/cbrt serve -config /etc/cbrt/cbrt.json -env-file /etc/cbrt/.env
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=20s
+
+# Data (JSONL telemetry + snapshot) lives in /var/lib/cbrt; set "data_dir": "/var/lib/cbrt".
+StateDirectory=cbrt
+StateDirectoryMode=0750
+WorkingDirectory=/var/lib/cbrt
+ReadWritePaths=/var/lib/cbrt
+UMask=0027
+
+# Hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectHostname=yes
+ProtectClock=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectProc=invisible
+ProcSubset=pid
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RemoveIPC=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged
+# Denied syscalls fail with EPERM instead of killing the process (Go probes some, e.g. setrlimit).
+SystemCallErrorNumber=EPERM
+# Binding a port < 1024 (e.g. native TLS on :443) needs, instead of the empty CapabilityBoundingSet=/AmbientCapabilities= lines:
+#   CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+#   AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+# Resource ceilings (the gateway targets tens of MB RSS)
+MemoryMax=512M
+TasksMax=256
+LimitNOFILE=8192
+
+[Install]
+WantedBy=multi-user.target

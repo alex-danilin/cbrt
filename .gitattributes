@@ -1,0 +1,3 @@
+# Keep LF everywhere: gofmt checks and SSE test fixtures depend on exact line endings.
+* text=auto eol=lf
+*.exe binary

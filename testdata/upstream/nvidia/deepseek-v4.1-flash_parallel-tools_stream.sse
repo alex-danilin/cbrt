@@ -1,0 +1,34 @@
+data: {"id":"synth0ds00000004","choices":[{"index":0,"delta":{"role":"assistant","reasoning_content":"Both"},"finish_reason":null,"logprobs":null}],"created":1767225704,"model":"deepseek-ai/deepseek-v4.1-flash","object":"chat.completion.chunk"}
+
+data: {"id":"synth0ds00000004","choices":[{"index":0,"delta":{"reasoning_content":" lookups are"},"finish_reason":null,"logprobs":null}],"created":1767225704,"model":"deepseek-ai/deepseek-v4.1-flash","object":"chat.completion.chunk"}
+
+data: {"id":"synth0ds00000004","choices":[{"index":0,"delta":{"reasoning_content":" independent; call"},"finish_reason":null,"logprobs":null}],"created":1767225704,"model":"deepseek-ai/deepseek-v4.1-flash","object":"chat.completion.chunk"}
+
+data: {"id":"synth0ds00000004","choices":[{"index":0,"delta":{"reasoning_content":" get_weather for Oslo and Lima"},"finish_reason":null,"logprobs":null}],"created":1767225704,"model":"deepseek-ai/deepseek-v4.1-flash","object":"chat.completion.chunk"}
+
+data: {"id":"synth0ds00000004","choices":[{"index":0,"delta":{"content":"Looking","reasoning_content":" together."},"finish_reason":null,"logprobs":null}],"created":1767225704,"model":"deepseek-ai/deepseek-v4.1-flash","object":"chat.completion.chunk"}
+
+data: {"id":"synth0ds00000004","choices":[{"index":0,"delta":{"content":" up both"},"finish_reason":null,"logprobs":null}],"created":1767225704,"model":"deepseek-ai/deepseek-v4.1-flash","object":"chat.completion.chunk"}
+
+data: {"id":"synth0ds00000004","choices":[{"index":0,"delta":{"content":" forecasts"},"finish_reason":null,"logprobs":null}],"created":1767225704,"model":"deepseek-ai/deepseek-v4.1-flash","object":"chat.completion.chunk"}
+
+data: {"id":"synth0ds00000004","choices":[{"index":0,"delta":{"content":" at once"},"finish_reason":null,"logprobs":null}],"created":1767225704,"model":"deepseek-ai/deepseek-v4.1-flash","object":"chat.completion.chunk"}
+
+data: {"id":"synth0ds00000004","choices":[{"index":0,"delta":{"content":".\n\n"},"finish_reason":null,"logprobs":null}],"created":1767225704,"model":"deepseek-ai/deepseek-v4.1-flash","object":"chat.completion.chunk"}
+
+data: {"id":"synth0ds00000004","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"chatcmpl-tool-synth000000000b1","type":"function","function":{"name":"get_weather","arguments":""}}]},"finish_reason":null,"logprobs":null}],"created":1767225704,"model":"deepseek-ai/deepseek-v4.1-flash","object":"chat.completion.chunk"}
+
+data: {"id":"synth0ds00000004","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"{\"city\": \""}}]},"finish_reason":null,"logprobs":null}],"created":1767225704,"model":"deepseek-ai/deepseek-v4.1-flash","object":"chat.completion.chunk"}
+
+data: {"id":"synth0ds00000004","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"Oslo\"}"}}]},"finish_reason":null,"logprobs":null}],"created":1767225704,"model":"deepseek-ai/deepseek-v4.1-flash","object":"chat.completion.chunk"}
+
+data: {"id":"synth0ds00000004","choices":[{"index":0,"delta":{"tool_calls":[{"index":1,"id":"chatcmpl-tool-synth000000000b2","type":"function","function":{"name":"get_weather","arguments":""}}]},"finish_reason":null,"logprobs":null}],"created":1767225704,"model":"deepseek-ai/deepseek-v4.1-flash","object":"chat.completion.chunk"}
+
+data: {"id":"synth0ds00000004","choices":[{"index":0,"delta":{"tool_calls":[{"index":1,"function":{"arguments":"{\"city\": \"Li"}}]},"finish_reason":null,"logprobs":null}],"created":1767225704,"model":"deepseek-ai/deepseek-v4.1-flash","object":"chat.completion.chunk"}
+
+data: {"id":"synth0ds00000004","choices":[{"index":0,"delta":{"tool_calls":[{"index":1,"function":{"arguments":"ma\"}"}}]},"finish_reason":null,"logprobs":null}],"created":1767225704,"model":"deepseek-ai/deepseek-v4.1-flash","object":"chat.completion.chunk"}
+
+data: {"id":"synth0ds00000004","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls","logprobs":null}],"created":1767225704,"model":"deepseek-ai/deepseek-v4.1-flash","object":"chat.completion.chunk","usage":{"prompt_tokens":320,"completion_tokens":88,"total_tokens":408,"prompt_tokens_details":{"cached_tokens":192},"completion_tokens_details":{"reasoning_tokens":15}}}
+
+data: [DONE]
+

@@ -1,0 +1,159 @@
+event: response.created
+data: {"response":{"background":false,"completed_at":null,"created_at":1767226003,"error":null,"frequency_penalty":0,"id":"resp_100005","incomplete_details":null,"instructions":null,"max_output_tokens":60,"max_tool_calls":null,"metadata":{},"model":"gemma-4-e2b-4","object":"response","output":[],"parallel_tool_calls":true,"presence_penalty":0,"previous_response_id":null,"prompt_cache_key":null,"reasoning":null,"safety_identifier":null,"service_tier":"default","status":"in_progress","store":false,"temperature":1,"text":{"format":{"type":"text"}},"tool_choice":"auto","tools":[],"top_logprobs":0,"top_p":1,"truncation":"disabled","usage":null},"sequence_number":0,"type":"response.created"}
+
+event: response.in_progress
+data: {"response":{"background":false,"completed_at":null,"created_at":1767226003,"error":null,"frequency_penalty":0,"id":"resp_100005","incomplete_details":null,"instructions":null,"max_output_tokens":60,"max_tool_calls":null,"metadata":{},"model":"gemma-4-e2b-4","object":"response","output":[],"parallel_tool_calls":true,"presence_penalty":0,"previous_response_id":null,"prompt_cache_key":null,"reasoning":null,"safety_identifier":null,"service_tier":"default","status":"in_progress","store":false,"temperature":1,"text":{"format":{"type":"text"}},"tool_choice":"auto","tools":[],"top_logprobs":0,"top_p":1,"truncation":"disabled","usage":null},"sequence_number":1,"type":"response.in_progress"}
+
+event: response.output_item.added
+data: {"item":{"id":"rs_100006","summary":[],"type":"reasoning"},"output_index":0,"sequence_number":2,"type":"response.output_item.added"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":"Here","item_id":"rs_100006","output_index":0,"sequence_number":3,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":" is","item_id":"rs_100006","output_index":0,"sequence_number":4,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":" a","item_id":"rs_100006","output_index":0,"sequence_number":5,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":" plan","item_id":"rs_100006","output_index":0,"sequence_number":6,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":" for","item_id":"rs_100006","output_index":0,"sequence_number":7,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":" the","item_id":"rs_100006","output_index":0,"sequence_number":8,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":" long","item_id":"rs_100006","output_index":0,"sequence_number":9,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":" report","item_id":"rs_100006","output_index":0,"sequence_number":10,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":" on","item_id":"rs_100006","output_index":0,"sequence_number":11,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":" lighthouses","item_id":"rs_100006","output_index":0,"sequence_number":12,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":":","item_id":"rs_100006","output_index":0,"sequence_number":13,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":"\n\n","item_id":"rs_100006","output_index":0,"sequence_number":14,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":"1","item_id":"rs_100006","output_index":0,"sequence_number":15,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":".","item_id":"rs_100006","output_index":0,"sequence_number":16,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":" ","item_id":"rs_100006","output_index":0,"sequence_number":17,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":" ","item_id":"rs_100006","output_index":0,"sequence_number":18,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":"**","item_id":"rs_100006","output_index":0,"sequence_number":19,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":"Scope","item_id":"rs_100006","output_index":0,"sequence_number":20,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":":**","item_id":"rs_100006","output_index":0,"sequence_number":21,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":" The","item_id":"rs_100006","output_index":0,"sequence_number":22,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":" request","item_id":"rs_100006","output_index":0,"sequence_number":23,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":" wants","item_id":"rs_100006","output_index":0,"sequence_number":24,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":" an","item_id":"rs_100006","output_index":0,"sequence_number":25,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":" in","item_id":"rs_100006","output_index":0,"sequence_number":26,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":"-","item_id":"rs_100006","output_index":0,"sequence_number":27,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":"depth","item_id":"rs_100006","output_index":0,"sequence_number":28,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":",","item_id":"rs_100006","output_index":0,"sequence_number":29,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":" 2000","item_id":"rs_100006","output_index":0,"sequence_number":30,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":"-","item_id":"rs_100006","output_index":0,"sequence_number":31,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":"word","item_id":"rs_100006","output_index":0,"sequence_number":32,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":" piece","item_id":"rs_100006","output_index":0,"sequence_number":33,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":" on","item_id":"rs_100006","output_index":0,"sequence_number":34,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":" ","item_id":"rs_100006","output_index":0,"sequence_number":35,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":"\"","item_id":"rs_100006","output_index":0,"sequence_number":36,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":"how","item_id":"rs_100006","output_index":0,"sequence_number":37,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":" lighthouses","item_id":"rs_100006","output_index":0,"sequence_number":38,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":" developed","item_id":"rs_100006","output_index":0,"sequence_number":39,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":".\"","item_id":"rs_100006","output_index":0,"sequence_number":40,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":"\n\n","item_id":"rs_100006","output_index":0,"sequence_number":41,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":"2","item_id":"rs_100006","output_index":0,"sequence_number":42,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":".","item_id":"rs_100006","output_index":0,"sequence_number":43,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":" ","item_id":"rs_100006","output_index":0,"sequence_number":44,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":" ","item_id":"rs_100006","output_index":0,"sequence_number":45,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":"**","item_id":"rs_100006","output_index":0,"sequence_number":46,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":"Outline","item_id":"rs_100006","output_index":0,"sequence_number":47,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":" the","item_id":"rs_100006","output_index":0,"sequence_number":48,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.delta
+data: {"delta":" Eras","item_id":"rs_100006","output_index":0,"sequence_number":49,"summary_index":0,"type":"response.reasoning_summary_text.delta"}
+
+event: response.reasoning_summary_text.done
+data: {"item_id":"rs_100006","output_index":0,"sequence_number":50,"summary_index":0,"text":"Here is a plan for the long report on lighthouses:\n\n1.  **Scope:** The request wants an in-depth, 2000-word piece on \"how lighthouses developed.\"\n\n2.  **Outline the Eras","type":"response.reasoning_summary_text.done"}
+
+event: response.output_item.done
+data: {"item":{"encrypted_content":"Here is a plan for the long report on lighthouses:\n\n1.  **Scope:** The request wants an in-depth, 2000-word piece on \"how lighthouses developed.\"\n\n2.  **Outline the Eras","id":"rs_100006","summary":[{"text":"Here is a plan for the long report on lighthouses:\n\n1.  **Scope:** The request wants an in-depth, 2000-word piece on \"how lighthouses developed.\"\n\n2.  **Outline the Eras","type":"summary_text"}],"type":"reasoning"},"output_index":0,"sequence_number":51,"type":"response.output_item.done"}
+
+event: response.completed
+data: {"response":{"background":false,"completed_at":1767226007,"created_at":1767226007,"error":null,"frequency_penalty":0,"id":"resp_100005","incomplete_details":null,"instructions":null,"max_output_tokens":60,"max_tool_calls":null,"metadata":{},"model":"gemma-4-e2b-4","object":"response","output":[{"encrypted_content":"Here is a plan for the long report on lighthouses:\n\n1.  **Scope:** The request wants an in-depth, 2000-word piece on \"how lighthouses developed.\"\n\n2.  **Outline the Eras","id":"rs_100006","summary":[{"text":"Here is a plan for the long report on lighthouses:\n\n1.  **Scope:** The request wants an in-depth, 2000-word piece on \"how lighthouses developed.\"\n\n2.  **Outline the Eras","type":"summary_text"}],"type":"reasoning"}],"parallel_tool_calls":true,"presence_penalty":0,"previous_response_id":null,"prompt_cache_key":null,"reasoning":null,"safety_identifier":null,"service_tier":"default","status":"completed","store":false,"temperature":1,"text":{"format":{"type":"text"}},"tool_choice":"auto","tools":[],"top_logprobs":0,"top_p":1,"truncation":"disabled","usage":{"input_tokens":30,"input_tokens_details":{"cached_tokens":24},"output_tokens":60,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":90}},"sequence_number":52,"type":"response.completed"}
+

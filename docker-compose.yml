@@ -1,0 +1,78 @@
+# cbrt + Ollama. See docs/deploy.md.
+#
+#   printf 'CBRT_API_KEY=%s\nNVIDIA_API_KEY=nvapi-...\n' "$(openssl rand -hex 24)" > .env
+#   docker compose up -d --build
+#
+# Host Ollama instead of the bundled one (e.g. Ollama already running natively):
+#   echo OLLAMA_BASE_URL=http://host.docker.internal:11434/v1 >> .env
+#   docker compose up -d --build --no-deps cbrt
+#
+# Secrets are read from .env at run time (env_file); nothing secret is baked into the image
+# (.dockerignore keeps .env, cbrt.json and data/ out of the build context).
+
+name: cbrt
+
+services:
+  cbrt:
+    build: .
+    image: cbrt:latest
+    restart: unless-stopped
+    depends_on:
+      ollama:
+        condition: service_started
+        required: false
+    ports:
+      # Loopback only. For remote access put a TLS reverse proxy in front (docs/deploy.md);
+      # the config sets trust_proxy, so never publish this port on a public interface as plain HTTP.
+      - "127.0.0.1:${CBRT_PORT:-8080}:8080"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434/v1}
+    volumes:
+      - ./deploy/cbrt.docker.json:/etc/cbrt/cbrt.json:ro
+      - cbrt-data:/data
+    extra_hosts:
+      # Makes host.docker.internal resolve on Linux too (Docker Desktop already provides it).
+      - "host.docker.internal:host-gateway"
+    networks: [default, backend]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 256m
+    pids_limit: 256
+    # No HEALTHCHECK: the image has no shell or curl. Probe GET /healthz from outside
+    # (reverse proxy / orchestrator), e.g. `curl -fsS http://127.0.0.1:8080/healthz`.
+
+  ollama:
+    image: ollama/ollama:latest   # pin a version/digest for reproducible or offline deployments
+    restart: unless-stopped
+    environment:
+      OLLAMA_CONTEXT_LENGTH: "32768"   # Ollama defaults to 4096 tokens, far too small for agents
+      OLLAMA_KEEP_ALIVE: "30m"
+    volumes:
+      - ollama-models:/root/.ollama
+    # Not published to the host, and the backend network has no egress (internal: true):
+    # models must be preloaded into the volume (docs/deploy.md, "Offline").
+    networks: [backend]
+    security_opt: ["no-new-privileges:true"]
+    # GPU (NVIDIA Container Toolkit required):
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+networks:
+  default: {}
+  backend:
+    internal: true
+
+volumes:
+  cbrt-data:
+    name: cbrt-data
+  ollama-models:
+    name: cbrt-ollama-models

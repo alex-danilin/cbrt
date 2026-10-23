@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cbrt projects</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #0b0c0c; --panel: #121313; --panel-2: #171818; --raise: #1d1e1e;
+  --line: rgba(255,255,255,.07); --line-2: rgba(255,255,255,.12);
+  --fg: #eceeed; --muted: #c2c7c4; --faint: #9da3a0;
+  --accent: #7fd6a6; --accent-2: #4fb67a; --glow: rgba(79,182,122,.30);
+  --warn: #e6b35a; --bad: #f07a6f; --white: #f3f4f2;
+  --r-lg: 22px; --r-md: 14px;
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body { margin: 0; background: var(--bg); color: var(--fg);
+  font: 400 15px/1.5 "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+button, select { font: inherit; }
+
+.shell { min-width: 0; }
+
+/* top bar */
+.top { display: flex; align-items: center; gap: 16px; padding: 16px 32px; border-bottom: 1px solid var(--line); }
+.tile { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; color: #eafff3;
+  background: linear-gradient(145deg, #74c99a, #3f9a67); box-shadow: 0 6px 24px rgba(79,182,122,.25); }
+.tile svg { width: 26px; height: 26px; }
+.top h1 { font-size: 20px; font-weight: 400; margin: 0; letter-spacing: .01em; }
+.top .right { margin-left: auto; display: flex; gap: 10px; align-items: center; color: var(--muted); font-size: 13px; }
+.pill { border: 1px solid var(--line-2); border-radius: 999px; padding: 6px 14px; white-space: nowrap; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); display: inline-block;
+  box-shadow: 0 0 0 4px rgba(127,214,166,.12); }
+
+/* hero */
+.hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 620px); gap: 28px 40px; align-items: stretch;
+  padding: 28px 32px; border-bottom: 1px solid var(--line); }
+.hero-left { display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+.hero-label { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .08em; }
+.big { font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif; font-size: clamp(40px, 6vw, 60px); font-weight: 200; letter-spacing: -.02em; line-height: 1.1; margin: 10px 0 8px;
+  font-variant-numeric: tabular-nums; }
+.hero .stats { margin-top: 24px; }
+
+/* activity chart in the hero */
+.pulse { border: 1px solid var(--line); border-radius: var(--r-lg); padding: 18px 22px 12px; min-width: 0;
+  background: radial-gradient(110% 80% at 50% 110%, rgba(79,182,122,.34), transparent 64%),
+    linear-gradient(180deg, var(--panel-2), var(--panel)); }
+.pulse-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.pulse-title { font-size: 17px; font-weight: 400; }
+.pulse-week { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.pulse-week b { color: var(--fg); font-weight: 300; font-size: 22px; font-variant-numeric: tabular-nums; }
+.trend-chip { font-size: 12px; border-radius: 6px; padding: 2px 8px; background: rgba(127,214,166,.15); color: var(--accent); }
+.trend-chip.down { background: rgba(240,122,111,.14); color: var(--bad); }
+.pulse .chart { width: 100%; height: auto; display: block; margin-top: 10px; overflow: visible; }
+.big .slash { color: var(--faint); font-weight: 200; }
+.big .accent { color: var(--accent); }
+.hero-sub { color: var(--muted); font-size: 15px; }
+.stats { display: flex; flex-wrap: wrap; gap: 14px 34px; }
+.stat { display: flex; gap: 12px; align-items: center; }
+.stat .ico { width: 36px; height: 36px; border-radius: 50%; background: var(--panel-2); border: 1px solid var(--line);
+  display: grid; place-items: center; color: var(--fg); }
+.stat .ico svg { width: 16px; height: 16px; }
+.stat .k { font-size: 13px; color: var(--fg); }
+.stat .v { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* grid */
+main { padding: 26px 32px 48px; columns: 380px; column-gap: 20px; }
+main > * { break-inside: avoid; margin: 0 0 20px; }
+.card { position: relative; background: linear-gradient(180deg, var(--panel-2), var(--panel)); border: 1px solid var(--line);
+  border-radius: var(--r-lg); padding: 22px 24px; min-width: 0; overflow: hidden; }
+.card h2 { font-size: 21px; font-weight: 400; margin: 0; overflow-wrap: anywhere; letter-spacing: .005em; }
+.sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+.head { display: flex; gap: 14px; justify-content: space-between; align-items: flex-start; }
+.head > div { min-width: 0; }
+.path { color: var(--faint); font-size: 12.5px; overflow-wrap: anywhere; margin-top: 2px; }
+
+.axis { fill: var(--faint); font-size: 17px; font-family: inherit; }
+.grid-line { stroke: rgba(255,255,255,.05); stroke-width: 1; }
+
+/* ring */
+.ring { width: 52px; height: 52px; flex: none; position: relative; }
+.ring svg { width: 52px; height: 52px; transform: rotate(-90deg); }
+.ring .track { fill: none; stroke: var(--raise); stroke-width: 3; }
+.ring .val { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; }
+.ring span { position: absolute; inset: 0; display: grid; place-items: center; font-size: 12px; font-variant-numeric: tabular-nums; }
+
+/* chips */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0; }
+.chip { font-size: 11px; border-radius: 6px; padding: 2px 8px; white-space: nowrap; }
+.chip.public { background: rgba(127,214,166,.15); color: var(--accent); }
+.chip.flag { background: rgba(230,179,90,.12); color: var(--warn); white-space: normal; }
+.goal { color: var(--muted); font-size: 14px; margin: 12px 0 0; display: -webkit-box; -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical; overflow: hidden; }
+
+/* now */
+.now { margin: 18px 0 0; padding: 14px 16px; border-radius: var(--r-md); background: rgba(255,255,255,.025);
+  border: 1px solid var(--line); }
+.label { color: var(--faint); font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; display: flex; align-items: center; gap: 8px; }
+.now p { margin: 6px 0 0; overflow-wrap: anywhere; }
+.now.idle p { color: var(--muted); }
+
+/* spark */
+.spark { margin: 16px 0 0; }
+.spark svg { width: 100%; height: 48px; display: block; overflow: visible; }
+.spark .label span { margin-left: auto; text-transform: none; letter-spacing: 0; color: var(--muted); }
+
+/* milestones */
+.ms { margin: 18px 0 0; display: grid; gap: 10px; }
+.ms-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; font-size: 14px; }
+.ms-row .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ms-row .count { color: var(--muted); font-variant-numeric: tabular-nums; }
+.bar { grid-column: 1 / -1; height: 4px; border-radius: 4px; background: var(--raise); overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent-2), var(--accent)); }
+
+/* tasks */
+.tasks { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 2px; }
+.task { display: flex; gap: 10px; align-items: center; justify-content: space-between; padding: 7px 0;
+  border-bottom: 1px solid var(--line); font-size: 14px; }
+.task:last-child { border-bottom: 0; }
+.task span { min-width: 0; overflow-wrap: anywhere; }
+.parked span { color: var(--faint); text-decoration: line-through; }
+.section { margin-top: 18px; }
+form { margin: 0; }
+.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line-2); border-radius: 999px;
+  padding: 2px 10px; font-size: 11px; cursor: pointer; flex: none; }
+.ghost:hover { color: var(--fg); border-color: var(--muted); }
+details { margin-top: 10px; font-size: 13px; }
+summary { color: var(--muted); cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; }
+summary::-webkit-details-marker { display: none; }
+summary::before { content: "›"; display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--raise); color: var(--fg); transition: transform .15s; }
+details[open] summary::before { transform: rotate(90deg); }
+
+/* card footer */
+.card-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+.meta { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; min-width: 0; flex: 1 1 160px; }
+.meta b { color: var(--fg); font-weight: 400; }
+.verdict { font-size: 11px; border-radius: 6px; padding: 2px 8px; margin-left: 4px; }
+.on-track { background: rgba(127,214,166,.15); color: var(--accent); }
+.drifting { background: rgba(230,179,90,.14); color: var(--warn); }
+.off-track, .unreadable, .unknown { background: rgba(240,122,111,.14); color: var(--bad); }
+.check { display: flex; gap: 8px; align-items: center; }
+.check select { background: var(--raise); color: var(--fg); border: 1px solid var(--line-2); border-radius: 10px;
+  padding: 7px 10px; font-size: 13px; }
+.primary { background: var(--white); color: #0b0c0c; border: 0; border-radius: 10px; padding: 8px 18px;
+  font-size: 14px; font-weight: 500; cursor: pointer; }
+.primary:hover { background: #fff; }
+.checking { color: var(--warn); font-size: 13px; display: flex; align-items: center; gap: 8px; }
+.checking .dot { background: var(--warn); box-shadow: 0 0 0 4px rgba(230,179,90,.12); }
+.error { color: var(--bad); font-size: 12px; overflow-wrap: anywhere; margin-top: 10px; }
+.empty { color: var(--muted); grid-column: 1 / -1; padding: 40px 0; }
+code { font-size: 13px; background: var(--raise); padding: 2px 6px; border-radius: 6px; }
+
+@media (max-width: 1000px) {
+  .hero { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 720px) {
+  .top, .hero, main { padding-left: 16px; padding-right: 16px; }
+  .top .right .pill { display: none; }
+}
+</style>
+</head>
+<body>
+{{define "toggle"}}<form method="post" action="/api/park"><input type="hidden" name="token" value="{{.Token}}"><input type="hidden" name="project" value="{{.Project}}"><input type="hidden" name="hash" value="{{.Hash}}"><input type="hidden" name="line" value="{{.Task.Line}}"><input type="hidden" name="text" value="{{.Task.Text}}"><button class="ghost" title="{{.Title}}">{{.Label}}</button></form>{{end}}
+{{define "ms"}}<div class="ms-row"><span class="name" title="{{.Name}}">{{.Name}}</span><span class="count">{{.Done}}/{{.Total}}</span><div class="bar"><i style="width: {{.Percent}}%"></i></div></div>{{end}}
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="fill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7fd6a6" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#7fd6a6" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<div class="shell">
+<header class="top">
+  <div class="tile" title="cbrt"><svg viewBox="0 0 64 64" fill="none" aria-label="cbrt"><polygon points="32 8, 52 19.5, 52 44.5, 32 56, 12 44.5, 12 19.5" stroke="currentColor" stroke-width="5" stroke-linejoin="round" opacity="0.45"/><path d="M 32 8 V 32 L 12 44.5 M 32 32 L 52 44.5" stroke="currentColor" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="32" cy="32" r="4.5" fill="currentColor"/></svg></div>
+  <h1>Projects</h1>
+  <div class="right"><span class="pill"><span class="dot"></span>&nbsp; generated {{.Generated}} · reload to refresh</span></div>
+</header>
+
+<section class="hero" id="overview">
+  <div class="hero-left">
+    <div class="hero-label">Tasks done</div>
+    <div class="big">{{.Summary.Done}}<span class="slash"> / </span><span class="accent">{{.Summary.Total}}</span></div>
+    <div class="hero-sub">{{.Summary.Percent}}% of all tasks done across {{.Summary.Projects}} {{if eq .Summary.Projects 1}}project{{else}}projects{{end}}</div>
+  <div class="stats">
+    <div class="stat"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M5 12h4l2-5 3 10 2-5h3"/></svg></span><div><div class="k">Active now</div><div class="v">{{.Summary.Active}} of {{.Summary.Projects}}</div></div></div>
+    <div class="stat"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></span><div><div class="k">Stale</div><div class="v">{{.Summary.Stale}} {{if eq .Summary.Stale 1}}project{{else}}projects{{end}}</div></div></div>
+    <div class="stat"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4 10-10"/></svg></span><div><div class="k">On track</div><div class="v">{{.Summary.OnTrack}} of {{.Summary.Checked}} checked</div></div></div>
+    <div class="stat"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6"/></svg></span><div><div class="k">Commits</div><div class="v">{{.Summary.Commits}} in 12 weeks</div></div></div>
+  </div>
+  </div>
+  {{if not .Empty}}<div class="pulse" id="activity">
+    <div class="pulse-head"><div><div class="pulse-title">Activity</div><div class="sub">Commits per week across all projects</div></div>
+      <div class="pulse-week"><span class="k">Last week</span> <b>{{.Summary.LastWeek}}</b>{{if .Summary.Trend}}<span class="trend-chip{{if .Summary.Down}} down{{end}}">{{.Summary.Trend}}</span>{{end}}</div></div>
+    {{with .Summary.Activity}}<svg class="chart" viewBox="0 0 600 168" role="img" aria-label="commits per week">
+      {{range .Labels}}<line class="grid-line" x1="{{.X}}" y1="0" x2="{{.X}}" y2="140"/>{{end}}
+      {{if .Has}}<path d="{{.Area}}" fill="url(#fill)"/><path d="{{.Line}}" fill="none" stroke="#7fd6a6" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="{{.EndX}}" cy="{{.EndY}}" r="6" fill="#121313" stroke="#7fd6a6" stroke-width="2.2"/>{{end}}
+      {{range .Labels}}<text class="axis" x="{{.X}}" y="164" text-anchor="middle">{{.Text}}</text>{{end}}
+    </svg>{{end}}
+  </div>{{end}}
+</section>
+
+<main id="projects">
+{{if .Empty}}<p class="empty">No connected projects yet. Run <code>cbrt projects connect &lt;folder&gt;</code>.</p>{{end}}
+{{range $c := .Cards}}
+<section class="card">
+  <div class="head">
+    <div>
+      <h2>{{.Name}}</h2>
+      <div class="path">{{.Path}}</div>
+    </div>
+    <span class="ring" title="{{.Done}} of {{.Total}} tasks done"><svg viewBox="0 0 44 44"><circle class="track" cx="22" cy="22" r="18"/><circle class="val" cx="22" cy="22" r="18" stroke-dasharray="{{.Ring}}"/></svg><span>{{.Percent}}%</span></span>
+  </div>
+  {{if or .Public .Flags}}<div class="chips">{{if .Public}}<span class="chip public" title="public repository: PLAN.md stays local (.git/info/exclude)">{{$.PublicMarker}}</span>{{end}}{{range .Flags}}<span class="chip flag">{{.}}</span>{{end}}</div>{{end}}
+  {{if .Goal}}<p class="goal" title="{{.Goal}}">{{.Goal}}</p>{{end}}
+  {{if .Now}}<div class="now{{if not .Active}} idle{{end}}"><div class="label">{{if .Active}}<span class="dot"></span>{{end}}Now</div><p>{{.Now}}</p></div>{{end}}
+  {{if .Spark.Has}}<div class="spark"><div class="label">Activity<span>{{.Commits}} commits · 12 weeks</span></div>
+    <svg viewBox="0 0 240 48" preserveAspectRatio="none" aria-hidden="true"><path d="{{.Spark.Area}}" fill="url(#fill)"/><path d="{{.Spark.Line}}" fill="none" stroke="#7fd6a6" stroke-width="1.6" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg></div>{{end}}
+  {{if .MsShown}}<div class="ms">{{range .MsShown}}{{template "ms" .}}
+    {{end}}</div>{{end}}
+  {{if .MsHidden}}<details><summary>{{len .MsHidden}} more milestones</summary><div class="ms">{{range .MsHidden}}{{template "ms" .}}
+    {{end}}</div></details>{{end}}
+  {{if .Next}}<div class="section"><div class="label">Next</div><ul class="tasks">{{range .Next}}<li class="task"><span>{{.Display}}</span>{{if .CanToggle}}{{template "toggle" ($.Toggle $c . "park")}}{{end}}</li>{{end}}</ul></div>{{end}}
+  {{if .More}}<details><summary>{{len .More}} more to do</summary><ul class="tasks">{{range .More}}<li class="task"><span>{{.Display}}</span>{{if .CanToggle}}{{template "toggle" ($.Toggle $c . "park")}}{{end}}</li>{{end}}</ul></details>{{end}}
+  {{if .Parked}}<details><summary>{{len .Parked}} parked</summary><ul class="tasks">{{range .Parked}}<li class="task parked"><span>{{.Display}}</span>{{template "toggle" ($.Toggle $c . "unpark")}}</li>{{end}}</ul></details>{{end}}
+  {{if .CheckError}}<div class="error">Last check failed: {{.CheckError}}</div>{{end}}
+  <div class="card-foot">
+    <div class="meta">{{if .Commit}}Last commit <b>{{.Commit}}</b>{{end}}{{if .Verdict}}<br>Check: <span class="verdict {{.VerdictClass}}">{{.Verdict}}</span> ({{.Checked}}){{end}}</div>
+    {{if .Checking}}<div class="checking"><span class="dot"></span>checking… ({{.Checking}}); reload to see the result</div>
+    {{else if .Hash}}<form method="post" action="/api/check" class="check"><input type="hidden" name="token" value="{{$.Token}}"><input type="hidden" name="project" value="{{.Name}}"><select name="agent" aria-label="agent">{{range $.Agents}}<option>{{.}}</option>{{end}}</select><button class="primary">Run check</button></form>{{end}}
+  </div>
+</section>
+{{end}}
+</main>
+</div>
+</body>
+</html>

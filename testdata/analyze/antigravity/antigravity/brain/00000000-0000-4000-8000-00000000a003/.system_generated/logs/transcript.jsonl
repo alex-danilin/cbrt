@@ -1,0 +1,9 @@
+{"step_index":0,"source":"USER_EXPLICIT","type":"USER_INPUT","status":"DONE","created_at":"2026-03-03T09:30:00Z","content":"<USER_REQUEST>\nStart the orchard-ledger "}
+{"step_index":1,"source":"MODEL","type":"PLANNER_RESPONSE","status":"DONE","created_at":"2026-03-03T09:30:03Z","tool_calls":[{"name":"run_command","args":{"CommandLine":"go run ./cmd/ledger serve","Cwd":"/workspace/orchard-ledger","WaitMsBeforeAsync":500,"toolAction":"demo action","toolSummary":"demo summary"}}]}
+{"step_index":2,"source":"MODEL","type":"RUN_COMMAND","status":"RUNNING","created_at":"2026-03-03T09:30:06Z","content":"Created At: 2026-03-03T09:30:07Z\nOutput "}
+{"step_index":3,"source":"MODEL","type":"PLANNER_RESPONSE","status":"DONE","created_at":"2026-03-03T09:30:09Z","content":"The server is starting in the background","tool_calls":[{"name":"run_command","args":{"CommandLine":"go run ./cmd/ledger tail-log","Cwd":"/workspace/orchard-ledger","WaitMsBeforeAsync":500,"toolAction":"demo action","toolSummary":"demo summary"}}]}
+{"step_index":4,"source":"MODEL","type":"RUN_COMMAND","status":"RUNNING","created_at":"2026-03-03T09:30:12Z","content":"Created At: 2026-03-03T09:30:13Z\nOutput "}
+{"step_index":5,"source":"USER_EXPLICIT","type":"USER_INPUT","status":"DONE","created_at":"2026-03-03T09:30:15Z","content":"<USER_REQUEST>\nStop, use port 9090 inste"}
+{"step_index":6,"source":"SYSTEM","type":"SYSTEM_MESSAGE","status":"DONE","created_at":"2026-03-03T09:30:18Z","content":"The following is a <SYSTEM_MESSAGE> gene"}
+{"step_index":7,"source":"SYSTEM","type":"SYSTEM_MESSAGE","status":"DONE","created_at":"2026-03-03T09:30:21Z","content":"The following is a <SYSTEM_MESSAGE> gene"}
+{"step_index":8,"source":"MODEL","type":"PLANNER_RESPONSE","status":"DONE","created_at":"2026-03-03T09:30:24Z","content":"Restarting the server on port 9090."}

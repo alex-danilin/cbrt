@@ -1,0 +1,170 @@
+{
+  "duration_ms": 2140,
+  "method": "POST",
+  "path": "/v1/responses",
+  "request_body": {
+    "client_metadata": {
+      "root_turn_id": "00000000-0000-4000-8000-5e5700000116",
+      "session_id": "00000000-0000-4000-8000-5e5700000010",
+      "thread_id": "00000000-0000-4000-8000-5e5700000011",
+      "turn_id": "00000000-0000-4000-8000-5e5700000216",
+      "x-codex-installation-id": "00000000-0000-4000-8000-5e5700000012",
+      "x-codex-turn-metadata": "{\"approval\":\"on-request\",\"sandbox\":\"workspace-write\",\"turn\":16,\"workspace\":\"/workspace/tasky\"}",
+      "x-codex-window-id": "win-00000000-0000-4000-8000-5e57000000"
+    },
+    "include": [
+      "reasoning.encrypted_content"
+    ],
+    "input": [
+      {
+        "content": [
+          {
+            "text": "\u003cpermissions instructions\u003e\nSandbox: the workspace is writable, the network is off. Commands that need more ask the developer first, with a one-line justification.\n\u003c/permissions instructions\u003e\n\n\u003capproval_policy\u003e\nCommands run inside the sandbox without asking. Writing outside /workspace/tasky, using the network, or deleting more than one file at a time needs approval. When you ask, say what the command does and why the task needs it, in one sentence. If the developer declines, find another way or stop and explain.\n\u003c/approval_policy\u003e",
+            "type": "input_text"
+          },
+          {
+            "text": "\u003ccollaboration_mode\u003e\nWork without stopping for confirmation on read-only steps. Stop and ask before anything that changes files outside the workspace.\n\u003c/collaboration_mode\u003e",
+            "type": "input_text"
+          }
+        ],
+        "id": "msg_synth_in_11",
+        "role": "developer",
+        "type": "message"
+      },
+      {
+        "content": [
+          {
+            "text": "\u003cenvironment_context\u003e\n  \u003ccwd\u003e/workspace/tasky\u003c/cwd\u003e\n  \u003cshell\u003ebash\u003c/shell\u003e\n  \u003ccurrent_date\u003e2026-01-15\u003c/current_date\u003e\n  \u003ctimezone\u003eEtc/UTC\u003c/timezone\u003e\n\u003c/environment_context\u003e",
+            "type": "input_text"
+          }
+        ],
+        "id": "msg_synth_in_12",
+        "role": "user",
+        "type": "message"
+      },
+      {
+        "content": [
+          {
+            "text": "Count the open tasks in tasks.jsonl.",
+            "type": "input_text"
+          }
+        ],
+        "id": "msg_synth_in_16",
+        "role": "user",
+        "type": "message"
+      },
+      {
+        "content": null,
+        "encrypted_content": null,
+        "id": "rs_synth_16",
+        "summary": [
+          {
+            "text": "Count lines whose done field is false; archived tasks may need excluding.",
+            "type": "summary_text"
+          }
+        ],
+        "type": "reasoning"
+      },
+      {
+        "arguments": "{\"command_line\":\"grep -c '\\\"done\\\":false' tasks.jsonl\"}",
+        "call_id": "call_synth_16",
+        "id": "fc_synth_16",
+        "name": "exec_command",
+        "type": "function_call"
+      },
+      {
+        "call_id": "call_synth_16",
+        "id": "fco_synth_in_16",
+        "output": "exit status: 0\nelapsed: 0.04s\n--- output ---\n9\n",
+        "type": "function_call_output"
+      },
+      {
+        "content": [
+          {
+            "text": "Context is nearly full. Write a checkpoint for a fresh session that continues this task: the goal, what has been done and found, what is left, and any file paths or commands it will need. Be brief and concrete; the new session sees nothing else.",
+            "type": "input_text"
+          }
+        ],
+        "role": "user",
+        "type": "message"
+      }
+    ],
+    "instructions": "You work as a coding agent in a terminal on the developer's machine, inside the tasky repository.\nRead before you write: open the files a change touches, and check how similar code is already done.\nMake focused edits with apply_patch if the tool exists; never rewrite a whole file to change a line.\nRun commands with exec_command. Prefer fast, read-only commands while exploring.\nAfter an edit, run go build and the tests for the package you changed, and fix what you broke.\nKeep the final message short: what changed, where, and anything the developer still has to decide.\nDo not run commands that delete data or rewrite history unless the developer asked for exactly that.\nIf the request is unclear, ask one precise question instead of guessing at a large change.",
+    "model": "quick",
+    "parallel_tool_calls": false,
+    "prompt_cache_key": "00000000-0000-4000-8000-5e5700000010",
+    "reasoning": {
+      "effort": "medium",
+      "summary": "auto"
+    },
+    "store": false,
+    "stream": true,
+    "tool_choice": "auto",
+    "tools": []
+  },
+  "request_headers": {
+    "Accept": [
+      "text/event-stream"
+    ],
+    "Content-Length": [
+      "3798"
+    ],
+    "Content-Type": [
+      "application/json"
+    ],
+    "Originator": [
+      "codex_exec"
+    ],
+    "Session-Id": [
+      "00000000-0000-4000-8000-5e5700000010"
+    ],
+    "Thread-Id": [
+      "00000000-0000-4000-8000-5e5700000011"
+    ],
+    "User-Agent": [
+      "codex_exec/0.159.2 (synthetic)"
+    ],
+    "X-Client-Request-Id": [
+      "00000000-0000-4000-8000-5e5700000316"
+    ],
+    "X-Codex-Beta-Features": [
+      "fixture_feature"
+    ],
+    "X-Codex-Turn-Metadata": [
+      "{\"approval\":\"on-request\",\"sandbox\":\"workspace-write\",\"turn\":16,\"workspace\":\"/workspace/tasky\"}"
+    ],
+    "X-Codex-Window-Id": [
+      "win-00000000-0000-4000-8000-5e57000000"
+    ]
+  },
+  "response_body": "event: response.created\ndata: {\"response\":{\"created_at\":1768471221,\"error\":null,\"id\":\"resp_synth_16\",\"incomplete_details\":null,\"model\":\"quick\",\"object\":\"response\",\"output\":null,\"parallel_tool_calls\":true,\"status\":\"in_progress\",\"tool_choice\":\"auto\",\"tools\":null,\"usage\":null},\"sequence_number\":0,\"type\":\"response.created\"}\n\nevent: response.in_progress\ndata: {\"response\":{\"created_at\":1768471221,\"error\":null,\"id\":\"resp_synth_16\",\"incomplete_details\":null,\"model\":\"quick\",\"object\":\"response\",\"output\":null,\"parallel_tool_calls\":true,\"status\":\"in_progress\",\"tool_choice\":\"auto\",\"tools\":null,\"usage\":null},\"sequence_number\":1,\"type\":\"response.in_progress\"}\n\nevent: response.output_item.added\ndata: {\"item\":{\"content\":null,\"id\":\"msg_synth_16\",\"role\":\"assistant\",\"status\":\"in_progress\",\"type\":\"message\"},\"output_index\":0,\"sequence_number\":2,\"type\":\"response.output_item.added\"}\n\nevent: response.content_part.added\ndata: {\"content_index\":0,\"item_id\":\"msg_synth_16\",\"output_index\":0,\"part\":{\"annotations\":[],\"text\":\"\",\"type\":\"output_text\"},\"sequence_number\":3,\"type\":\"response.content_part.added\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"Checkp\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":4,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"oi\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":5,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"nt: the\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":6,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\" goal\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":7,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\" is to \",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":8,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"c\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":9,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"ount ope\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":10,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"n ta\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":11,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"sks in t\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":12,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"asks.json\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":13,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"l. `wc -l\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":14,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\" \",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":15,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"tasks.\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":16,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"jsonl`\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":17,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\" sho\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":18,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"wed 14 li\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":19,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"nes; `gre\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":20,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"p -c '\\\"d\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":21,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"one\\\":f\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":22,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"alse' t\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":23,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"asks.\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":24,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"jsonl` \",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":25,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"showed 9.\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":26,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\" Remainin\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":27,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"g\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":28,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\": conf\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":29,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"i\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":30,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"rm no arc\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":31,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"hiv\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":32,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"ed task\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":33,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\" is count\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":34,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"e\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":35,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"d (check\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":36,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\" the \",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":37,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"\\\"archive\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":38,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"d\\\" fi\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":39,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"eld) and\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":40,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\" re\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":41,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"p\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":42,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"ort th\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":43,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"e nu\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":44,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.delta\ndata: {\"content_index\":0,\"delta\":\"mber.\",\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":45,\"type\":\"response.output_text.delta\"}\n\nevent: response.output_text.done\ndata: {\"content_index\":0,\"item_id\":\"msg_synth_16\",\"output_index\":0,\"sequence_number\":46,\"text\":\"Checkpoint: the goal is to count open tasks in tasks.jsonl. `wc -l tasks.jsonl` showed 14 lines; `grep -c '\\\"done\\\":false' tasks.jsonl` showed 9. Remaining: confirm no archived task is counted (check the \\\"archived\\\" field) and report the number.\",\"type\":\"response.output_text.done\"}\n\nevent: response.content_part.done\ndata: {\"content_index\":0,\"item_id\":\"msg_synth_16\",\"output_index\":0,\"part\":{\"annotations\":[],\"text\":\"Checkpoint: the goal is to count open tasks in tasks.jsonl. `wc -l tasks.jsonl` showed 14 lines; `grep -c '\\\"done\\\":false' tasks.jsonl` showed 9. Remaining: confirm no archived task is counted (check the \\\"archived\\\" field) and report the number.\",\"type\":\"output_text\"},\"sequence_number\":47,\"type\":\"response.content_part.done\"}\n\nevent: response.output_item.done\ndata: {\"item\":{\"content\":[{\"annotations\":[],\"text\":\"Checkpoint: the goal is to count open tasks in tasks.jsonl. `wc -l tasks.jsonl` showed 14 lines; `grep -c '\\\"done\\\":false' tasks.jsonl` showed 9. Remaining: confirm no archived task is counted (check the \\\"archived\\\" field) and report the number.\",\"type\":\"output_text\"}],\"id\":\"msg_synth_16\",\"role\":\"assistant\",\"status\":\"completed\",\"type\":\"message\"},\"output_index\":0,\"sequence_number\":48,\"type\":\"response.output_item.done\"}\n\nevent: response.completed\ndata: {\"response\":{\"created_at\":1768471221,\"error\":null,\"id\":\"resp_synth_16\",\"incomplete_details\":null,\"model\":\"quick\",\"object\":\"response\",\"output\":[{\"content\":[{\"annotations\":[],\"text\":\"Checkpoint: the goal is to count open tasks in tasks.jsonl. `wc -l tasks.jsonl` showed 14 lines; `grep -c '\\\"done\\\":false' tasks.jsonl` showed 9. Remaining: confirm no archived task is counted (check the \\\"archived\\\" field) and report the number.\",\"type\":\"output_text\"}],\"id\":\"msg_synth_16\",\"role\":\"assistant\",\"status\":\"completed\",\"type\":\"message\"}],\"parallel_tool_calls\":true,\"status\":\"completed\",\"tool_choice\":\"auto\",\"tools\":null,\"usage\":{\"input_tokens\":3900,\"input_tokens_details\":{\"cached_tokens\":0},\"output_tokens\":96,\"output_tokens_details\":{\"reasoning_tokens\":0},\"total_tokens\":3996}},\"sequence_number\":49,\"type\":\"response.completed\"}\n\n",
+  "response_headers": {
+    "Cache-Control": [
+      "no-cache"
+    ],
+    "Content-Type": [
+      "text/event-stream"
+    ],
+    "Date": [
+      "Thu, 15 Jan 2026 10:01:52 UTC"
+    ],
+    "X-Accel-Buffering": [
+      "no"
+    ],
+    "X-Cbrt-Attempts": [
+      "local:synth-coder-8b:ok"
+    ],
+    "X-Cbrt-Model": [
+      "synth-coder-8b"
+    ],
+    "X-Cbrt-Provider": [
+      "local"
+    ],
+    "X-Cbrt-Route": [
+      "quick"
+    ]
+  },
+  "seq": 16,
+  "status": 200,
+  "time": "2026-01-15T10:01:52.019753072Z"
+}

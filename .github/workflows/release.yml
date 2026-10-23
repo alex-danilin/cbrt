@@ -1,0 +1,32 @@
+name: release
+
+# Push a tag like v0.1.0 to build all targets and publish a GitHub release:
+#   git tag v0.1.0 && git push origin v0.1.0
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          check-latest: true # newest patch release: security fixes (e.g. GO-2026-6809)
+      - name: test
+        run: go test -count=1 -race ./...
+      - name: build all targets
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: go run scripts/build.go
+      - name: checksums
+        run: cd dist && sha256sum cbrt-* > SHA256SUMS
+      - name: publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${{ github.ref_name }}" dist/* --title "cbrt ${{ github.ref_name }}" --generate-notes

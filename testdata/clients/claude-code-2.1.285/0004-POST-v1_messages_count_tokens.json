@@ -1,0 +1,97 @@
+{
+  "duration_ms": 1,
+  "method": "POST",
+  "path": "/v1/messages/count_tokens?beta=true",
+  "request_body": {
+    "messages": [
+      {
+        "content": "Estimate only: the file internal/store/jsonl.go is about to be read in full. It holds the append-only task log, the compaction routine that rewrites finished tasks into an archive, and the lock that keeps two tasky processes from writing at once.",
+        "role": "user"
+      }
+    ],
+    "model": "claude-haiku-4-5",
+    "tools": []
+  },
+  "request_headers": {
+    "Accept": [
+      "application/json"
+    ],
+    "Accept-Encoding": [
+      "gzip, deflate"
+    ],
+    "Anthropic-Beta": [
+      "synthetic-count-2026-01-04"
+    ],
+    "Anthropic-Dangerous-Direct-Browser-Access": [
+      "true"
+    ],
+    "Anthropic-Version": [
+      "2023-06-01"
+    ],
+    "Authorization": [
+      "Bearer synthetic-token"
+    ],
+    "Connection": [
+      "keep-alive"
+    ],
+    "Content-Length": [
+      "327"
+    ],
+    "Content-Type": [
+      "application/json"
+    ],
+    "User-Agent": [
+      "claude-cli/2.1.285 (synthetic)"
+    ],
+    "X-App": [
+      "cli"
+    ],
+    "X-Claude-Code-Session-Id": [
+      "00000000-0000-4000-8000-5e5700000002"
+    ],
+    "X-Stainless-Arch": [
+      "x64"
+    ],
+    "X-Stainless-Lang": [
+      "js"
+    ],
+    "X-Stainless-Os": [
+      "Linux"
+    ],
+    "X-Stainless-Package-Version": [
+      "0.0.0"
+    ],
+    "X-Stainless-Retry-Count": [
+      "0"
+    ],
+    "X-Stainless-Runtime": [
+      "node"
+    ],
+    "X-Stainless-Runtime-Version": [
+      "v0.0.0"
+    ],
+    "X-Stainless-Timeout": [
+      "600"
+    ]
+  },
+  "response_body": {
+    "input_tokens": 61
+  },
+  "response_headers": {
+    "Cache-Control": [
+      "no-cache"
+    ],
+    "Content-Length": [
+      "19"
+    ],
+    "Content-Type": [
+      "application/json"
+    ],
+    "Date": [
+      "Thu, 15 Jan 2026 10:00:28 UTC"
+    ]
+  },
+  "seq": 4,
+  "status": 200,
+  "time": "2026-01-15T10:00:28.004938268Z"
+}

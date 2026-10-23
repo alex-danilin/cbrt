@@ -1,0 +1,12 @@
+.env
+/captures/
+/data/
+/dist/
+*.exe
+/.gotmp/
+/cbrt.json
+/docs/internal/
+/.claude/
+/AGENTS.md
+/.privacy-terms
+/PLAN.md

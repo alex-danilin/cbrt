@@ -1,0 +1,59 @@
+{
+  "duration_ms": 3,
+  "method": "GET",
+  "path": "/v1/models?client_version=0.154.0",
+  "request_headers": {
+    "Accept": [
+      "*/*"
+    ],
+    "Originator": [
+      "codex_exec"
+    ],
+    "User-Agent": [
+      "codex_exec/0.154.0 (synthetic)"
+    ]
+  },
+  "response_body": {
+    "data": [
+      {
+        "created": 1767000000,
+        "id": "synth-coder-8b:latest",
+        "object": "model",
+        "owned_by": "library"
+      },
+      {
+        "created": 1766990000,
+        "id": "synth-coder-3b:latest",
+        "object": "model",
+        "owned_by": "library"
+      },
+      {
+        "created": 1766980000,
+        "id": "synth-vision-4b:latest",
+        "object": "model",
+        "owned_by": "library"
+      },
+      {
+        "created": 1766970000,
+        "id": "synth-embed-small:latest",
+        "object": "model",
+        "owned_by": "library"
+      }
+    ],
+    "object": "list"
+  },
+  "response_headers": {
+    "Content-Length": [
+      "390"
+    ],
+    "Content-Type": [
+      "application/json"
+    ],
+    "Date": [
+      "Thu, 15 Jan 2026 10:00:07 UTC"
+    ]
+  },
+  "seq": 1,
+  "status": 200,
+  "time": "2026-01-15T10:00:07.001234567Z"
+}

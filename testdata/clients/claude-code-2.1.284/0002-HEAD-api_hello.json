@@ -1,0 +1,33 @@
+{
+  "duration_ms": 0,
+  "method": "HEAD",
+  "path": "/api/hello",
+  "request_headers": {
+    "Accept": [
+      "*/*"
+    ],
+    "Accept-Encoding": [
+      "gzip, deflate"
+    ],
+    "Connection": [
+      "keep-alive"
+    ],
+    "User-Agent": [
+      "Bun/0.0.0-synthetic"
+    ]
+  },
+  "response_headers": {
+    "Content-Length": [
+      "19"
+    ],
+    "Content-Type": [
+      "text/plain"
+    ],
+    "Date": [
+      "Thu, 15 Jan 2026 10:00:14 UTC"
+    ]
+  },
+  "seq": 2,
+  "status": 404,
+  "time": "2026-01-15T10:00:14.002469134Z"
+}

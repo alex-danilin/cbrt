@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:,">
+<title>cbrt</title>
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --fg: #1b1f24; --muted: #5a6370; --line: #d8dde3;
+  --ok: #1d6b35; --warn: #8a5300; --bad: #b3261e; --warn-bg: #fff4dc; --bad-bg: #fde8e6;
+  --badge-bg: #e7ebf0; --focus: #2457c5;
+  --c0: #3b7d23; --c1: #2563a8; --c2: #b05f10; --c3: #7a4bb0; --c4: #a8325e; --c5: #2c8a8a;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111418; --panel: #1a1f25; --fg: #e6e9ed; --muted: #a0a9b4; --line: #2e353d;
+    --ok: #6fcf8a; --warn: #f0b64a; --bad: #ff8a80; --warn-bg: #2f2612; --bad-bg: #331a18;
+    --badge-bg: #2a3139; --focus: #8ab4ff;
+    --c0: #7cc35a; --c1: #6aa6e8; --c2: #e8a05a; --c3: #b48ce8; --c4: #e8799f; --c5: #6cc9c9;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+main, header, footer { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 12px; padding-top: 16px; padding-bottom: 8px; }
+h1 { font-size: 20px; margin: 0; }
+h2 { font-size: 15px; margin: 24px 0 8px; }
+.meta { margin-left: auto; color: var(--muted); font-size: 13px; }
+.badge { display: inline-block; padding: 1px 8px; border-radius: 10px; background: var(--badge-bg); font-size: 12px; font-weight: 600; }
+.conn { color: var(--warn); font-size: 13px; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+.banner { border: 1px solid var(--line); border-left: 4px solid var(--warn); background: var(--warn-bg); border-radius: 6px; padding: 8px 12px; margin: 8px 0; }
+.banner.bad { border-left-color: var(--bad); background: var(--bad-bg); }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+.card h3 { margin: 0 0 2px; font-size: 15px; }
+.card dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 8px 0 0; }
+.card dt { color: var(--muted); }
+.card dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.st { font-weight: 600; }
+.st.healthy { color: var(--ok); } .st.cooldown, .st.half_open { color: var(--warn); } .st.disabled { color: var(--bad); }
+.scroll { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; }
+th, td { padding: 6px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+th { font-size: 12px; color: var(--muted); font-weight: 600; white-space: nowrap; }
+th button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+th[aria-sort] button { color: var(--fg); }
+button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.wrap { overflow-wrap: anywhere; }
+td.model { min-width: 14em; }
+.chartbox { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+svg { display: block; width: 100%; height: auto; max-height: 280px; }
+svg text { fill: var(--muted); font-size: 11px; }
+svg line { stroke: var(--line); }
+.legend { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 0; margin: 8px 0 0; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.tag { font-size: 11px; font-weight: 600; padding: 0 6px; border-radius: 8px; background: var(--warn-bg); color: var(--warn); border: 1px solid var(--warn); margin-left: 6px; }
+.feed { list-style: none; margin: 0; padding: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+.feed li { padding: 6px 12px; border-bottom: 1px solid var(--line); }
+.feed li:last-child { border-bottom: 0; }
+.feed time { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 8px; }
+.empty { color: var(--muted); padding: 10px 12px; margin: 0; }
+footer { padding-top: 16px; padding-bottom: 24px; color: var(--muted); font-size: 12px; }
+footer span { margin-right: 14px; display: inline-block; }
+footer .hot { color: var(--bad); font-weight: 700; }
+.sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>cbrt</h1>
+  <span id="offline" class="badge" hidden>offline mode</span>
+  <span id="conn" class="conn" role="status" hidden>connection lost — retrying</span>
+  <span class="meta">last updated <time id="updated">—</time></span>
+</header>
+<main>
+  <section id="banners" aria-live="polite" aria-label="Provider alerts"></section>
+
+  <section aria-labelledby="h-prov">
+    <h2 id="h-prov">Providers</h2>
+    <div id="cards" class="cards"></div>
+  </section>
+
+  <section aria-labelledby="h-models">
+    <h2 id="h-models">Invocations per model</h2>
+    <div class="scroll"><table id="models"><thead><tr></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section aria-labelledby="h-chart">
+    <h2 id="h-chart">Tokens per day (14 days)</h2>
+    <div class="chartbox">
+      <svg id="chart" role="img" aria-label="Loading"></svg>
+      <p id="chart-empty" class="empty" hidden>no traffic yet</p>
+      <ul id="legend" class="legend"></ul>
+      <table id="chart-data" class="sr"></table>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-routes">
+    <h2 id="h-routes">Routes</h2>
+    <div class="scroll"><table id="routes"><thead><tr><th>Route</th><th>Last target</th><th>Time</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section aria-labelledby="h-events">
+    <h2 id="h-events">Switch events</h2>
+    <ul id="events" class="feed"></ul>
+  </section>
+</main>
+<footer id="health" aria-label="Gateway health"></footer>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const REASONS = {
+  quota_exhausted: 'credits exhausted', rate_limited: 'rate limited',
+  auth_error: 'authentication failed (disabled until reload)', unreachable: 'unreachable',
+  timeout: 'timing out', upstream_error: 'errors', model_unavailable: 'model unavailable'
+};
+const STATUS = { healthy: 'Healthy', cooldown: 'Cooldown', half_open: 'Half-open (probing)', disabled: 'Disabled' };
+const NAMES = { nvidia: 'NVIDIA', ollama: 'Ollama' };
+let data = null;
+let sort = { key: 'month', dir: -1 };
+
+function el(tag, props, kids) {
+  const e = document.createElement(tag);
+  for (const k in props || {}) {
+    if (k === 'class') e.className = props[k];
+    else if (k === 'text') e.textContent = props[k];
+    else e.setAttribute(k, props[k]);
+  }
+  for (const c of kids || []) if (c != null && c !== '') e.append(c); // strings become text nodes
+  return e;
+}
+const reason = r => REASONS[r] || String(r || '').replace(/_/g, ' ');
+const pname = p => NAMES[p] || (p ? p[0].toUpperCase() + p.slice(1) : '?');
+const provOf = target => String(target || '').split(':')[0];
+const inv = c => c ? (c.completed || 0) + (c.partial || 0) + (c.cancelled || 0) + (c.failed || 0) : 0;
+const tin = t => t ? (t.prompt_reported || 0) + (t.prompt_estimated || 0) : 0;
+const tout = t => t ? (t.completion_reported || 0) + (t.completion_estimated || 0) : 0;
+const tEst = t => t ? (t.prompt_estimated || 0) + (t.completion_estimated || 0) : 0;
+const tTot = t => tin(t) + tout(t);
+
+function fmt(n) {
+  n = Number(n) || 0;
+  const a = Math.abs(n);
+  if (a < 1000) return String(Math.round(n));
+  for (const [u, s] of [[1e9, 'B'], [1e6, 'M'], [1e3, 'k']]) {
+    if (a >= u) return (n / u).toFixed(a / u < 100 ? 1 : 0).replace(/\.0$/, '') + s;
+  }
+}
+function sameDay(d) { const n = new Date(); return d.toDateString() === n.toDateString(); }
+function hm(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  const t = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return sameDay(d) ? t : d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + t;
+}
+function timeEl(iso) { return el('time', { datetime: iso || '', text: hm(iso) || '—' }); }
+function tokText(t) {
+  const e = tEst(t);
+  return fmt(tTot(t)) + (e ? ' (≈' + fmt(e) + ' est.)' : '');
+}
+function colorOf(p, all) {
+  const fixed = { nvidia: 0, ollama: 1 };
+  if (p in fixed) return 'var(--c' + fixed[p] + ')';
+  const others = all.filter(x => !(x in fixed)).sort();
+  return 'var(--c' + ((others.indexOf(p) + 2) % 6) + ')';
+}
+
+function renderBanners(d) {
+  const box = $('banners');
+  box.replaceChildren();
+  for (const p of d.providers || []) {
+    if (p.status === 'healthy') continue;
+    let text = pname(p.provider) + ': ';
+    if (p.status === 'half_open') text += 'probing recovery after ' + reason(p.reason);
+    else text += reason(p.reason);
+    // Where is traffic going instead? Prefer the latest switch away from this provider.
+    const sw = (d.events || []).find(e => e.kind === 'switch' && provOf(e.from) === p.provider);
+    const rt = (d.routes || []).find(r => r.fallback && provOf(r.last_target) !== p.provider && r.reason === p.reason);
+    const to = sw ? provOf(sw.to) : rt ? provOf(rt.last_target) : '';
+    const since = sw ? sw.time : rt ? rt.last_at : '';
+    if (to) text += ' — routing to ' + pname(to) + (since ? ' since ' + hm(since) : '');
+    if (p.until && p.reason !== 'auth_error') text += ', retry at ' + hm(p.until);
+    box.append(el('p', { class: 'banner' + (p.status === 'disabled' ? ' bad' : '') }, [text]));
+  }
+}
+
+function renderCards(d) {
+  const box = $('cards');
+  box.replaceChildren();
+  const ps = d.providers || [];
+  if (!ps.length) { box.append(el('p', { class: 'empty', text: 'no providers configured' })); return; }
+  for (const p of ps) {
+    let st = STATUS[p.status] || p.status;
+    if (p.status !== 'healthy' && p.reason) st += ' — ' + reason(p.reason);
+    if (p.until && p.status === 'cooldown') st += ', until ' + hm(p.until);
+    const row = (k, v) => [el('dt', { text: k }), el('dd', { text: v })];
+    box.append(el('article', { class: 'card' }, [
+      el('h3', { text: pname(p.provider) }),
+      el('div', { class: 'muted small', text: p.location || '' }),
+      el('div', { class: 'st ' + p.status, text: st }),
+      el('dl', {}, [
+        ...row('Invocations today', fmt(inv(p.today))),
+        ...row('Invocations 30 d', fmt(inv(p.month))),
+        ...row('Tokens today', tokText(p.tokens_today)),
+        ...row('Tokens 30 d', tokText(p.tokens_month)),
+        ...row('Failures today / 30 d', fmt((p.today || {}).failed) + ' / ' + fmt((p.month || {}).failed))
+      ])
+    ]));
+  }
+}
+
+const COLS = [
+  { key: 'model', label: 'Model', v: m => m.model, cell: m => el('td', { class: 'wrap model', text: m.model }) },
+  { key: 'provider', label: 'Provider', v: m => m.provider },
+  { key: 'today', label: 'Today', n: 1, v: m => inv(m.today), cell: m => fmt(inv(m.today)) },
+  { key: 'month', label: '30 d', n: 1, v: m => inv(m.month), cell: m => {
+      const c = m.month || {};
+      const parts = [fmt(c.completed) + ' ok'];
+      if (c.partial) parts.push(fmt(c.partial) + ' partial');
+      if (c.cancelled) parts.push(fmt(c.cancelled) + ' cancelled');
+      if (c.failed) parts.push(fmt(c.failed) + ' failed');
+      return el('td', { class: 'n' }, [fmt(inv(c)), el('br'), el('span', { class: 'muted small', text: parts.join(' · ') })]);
+    } },
+  { key: 'tin', label: 'Tokens in 30 d', n: 1, v: m => tin(m.tokens_month),
+    cell: m => ((m.tokens_month || {}).prompt_estimated ? '≈' : '') + fmt(tin(m.tokens_month)) },
+  { key: 'tout', label: 'Tokens out 30 d', n: 1, v: m => tout(m.tokens_month),
+    cell: m => ((m.tokens_month || {}).completion_estimated ? '≈' : '') + fmt(tout(m.tokens_month)) },
+  { key: 'p50', label: 'p50 latency', n: 1, v: m => m.p50_latency_ms || 0, cell: m => {
+      const ms = m.p50_latency_ms;
+      return !ms ? '—' : ms < 1000 ? Math.round(ms) + ' ms' : (ms / 1000).toFixed(1) + ' s';
+    } },
+  { key: 'fail', label: 'Failure rate', n: 1, v: m => m.failure_rate || 0,
+    cell: m => ((m.failure_rate || 0) * 100).toFixed(1) + '%' }
+];
+
+function renderModels() {
+  const table = $('models');
+  const head = table.tHead.rows[0];
+  head.replaceChildren();
+  for (const c of COLS) {
+    const th = el('th', { scope: 'col', class: c.n ? 'n' : '' });
+    if (sort.key === c.key) th.setAttribute('aria-sort', sort.dir > 0 ? 'ascending' : 'descending');
+    const arrow = sort.key === c.key ? (sort.dir > 0 ? ' ▲' : ' ▼') : '';
+    const b = el('button', { type: 'button', text: c.label + arrow });
+    b.addEventListener('click', () => {
+      sort = sort.key === c.key ? { key: c.key, dir: -sort.dir } : { key: c.key, dir: c.n ? -1 : 1 };
+      renderModels();
+      table.tHead.querySelector('[aria-sort] button').focus();
+    });
+    th.append(b);
+    head.append(th);
+  }
+  const body = table.tBodies[0];
+  body.replaceChildren();
+  const ms = ((data && data.models) || []).slice();
+  if (!ms.length) {
+    body.append(el('tr', {}, [el('td', { colspan: COLS.length, class: 'muted', text: 'no traffic yet' })]));
+    return;
+  }
+  const col = COLS.find(c => c.key === sort.key);
+  ms.sort((a, b) => {
+    const x = col.v(a), y = col.v(b);
+    return (typeof x === 'string' ? String(x).localeCompare(y) : x - y) * sort.dir;
+  });
+  for (const m of ms) {
+    body.append(el('tr', {}, COLS.map(c => {
+      const v = c.cell ? c.cell(m) : c.v(m);
+      return v instanceof Node ? v : el('td', { class: c.n ? 'n' : '', text: v });
+    })));
+  }
+}
+
+function renderChart(d) {
+  const svg = $('chart'), NS = svg.namespaceURI;
+  const days = d.daily || [];
+  const provs = [...new Set(days.flatMap(x => Object.keys(x.tokens_by_provider || {})))].sort();
+  const val = (x, p) => (x.tokens_by_provider || {})[p] || 0;
+  const totals = days.map(x => provs.reduce((s, p) => s + val(x, p), 0));
+  const max = Math.max(0, ...totals);
+  const s = (tag, attrs, text) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    return e;
+  };
+  svg.replaceChildren();
+  $('legend').replaceChildren();
+  $('chart-data').replaceChildren();
+  const empty = !days.length || max === 0;
+  svg.hidden = empty;
+  $('chart-empty').hidden = !empty;
+  if (empty) return;
+
+  const W = 700, H = 220, L = 44, R = 8, T = 12, B = 24, ph = H - T - B;
+  const slot = (W - L - R) / days.length;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  svg.append(s('line', { x1: L, x2: W - R, y1: T, y2: T, 'stroke-dasharray': '3 3' }));
+  svg.append(s('line', { x1: L, x2: W - R, y1: H - B, y2: H - B }));
+  svg.append(s('text', { x: L - 6, y: T + 4, 'text-anchor': 'end' }, fmt(max)));
+  svg.append(s('text', { x: L - 6, y: H - B + 4, 'text-anchor': 'end' }, '0'));
+  days.forEach((x, i) => {
+    let y = H - B;
+    const bx = L + i * slot + slot * 0.15, bw = slot * 0.7;
+    for (const p of provs) {
+      const v = val(x, p);
+      if (!v) continue;
+      const h = Math.max(1, v / max * ph);
+      y -= h;
+      const r = s('rect', { x: bx.toFixed(1), y: y.toFixed(1), width: bw.toFixed(1), height: h.toFixed(1) });
+      r.style.fill = colorOf(p, provs);
+      r.append(s('title', {}, x.day + ' ' + pname(p) + ': ' + fmt(v) + ' tokens'));
+      svg.append(r);
+    }
+    svg.append(s('text', { x: (bx + bw / 2).toFixed(1), y: H - 8, 'text-anchor': 'middle' }, String(Number(String(x.day).slice(8, 10)))));
+  });
+  const peak = totals.indexOf(max);
+  const sum = totals.reduce((a, b) => a + b, 0);
+  svg.setAttribute('aria-label', 'Stacked bar chart of tokens per day by provider (' + provs.map(pname).join(', ') +
+    ') for ' + days.length + ' days: total ' + fmt(sum) + ', peak ' + fmt(max) + ' on ' + days[peak].day + '. Data table follows.');
+
+  for (const p of provs) {
+    const sw = el('span', { class: 'sw', 'aria-hidden': 'true' });
+    sw.style.background = colorOf(p, provs);
+    $('legend').append(el('li', {}, [sw, pname(p)]));
+  }
+  const tbl = $('chart-data');
+  tbl.append(el('caption', { text: 'Tokens per day by provider' }));
+  tbl.append(el('tr', {}, [el('th', { text: 'Day' }), ...provs.map(p => el('th', { text: pname(p) })), el('th', { text: 'Total' })]));
+  days.forEach((x, i) => tbl.append(el('tr', {}, [el('td', { text: x.day }),
+    ...provs.map(p => el('td', { text: String(val(x, p)) })), el('td', { text: String(totals[i]) })])));
+}
+
+function renderRoutes(d) {
+  const body = $('routes').tBodies[0];
+  body.replaceChildren();
+  const rs = d.routes || [];
+  if (!rs.length) { body.append(el('tr', {}, [el('td', { colspan: 3, class: 'muted', text: 'no traffic yet' })])); return; }
+  for (const r of rs) {
+    const target = el('td', { class: 'wrap' }, [r.last_target || '—']);
+    if (r.fallback) target.append(el('span', { class: 'tag', text: 'fallback' + (r.reason ? ': ' + reason(r.reason) : '') }));
+    body.append(el('tr', {}, [el('td', { text: r.route }), target, el('td', { class: 'n' }, [timeEl(r.last_at)])]));
+  }
+}
+
+function eventText(e) {
+  const why = e.reason ? ' (' + reason(e.reason) + ')' : '';
+  const retry = e.retry_at ? ', retry at ' + hm(e.retry_at) : '';
+  const who = e.target || e.provider || '';
+  switch (e.kind) {
+    case 'switch': return (e.from || '?') + ' → ' + (e.to || '?') + why;
+    case 'cooldown': return who + ' cooling down' + why + retry;
+    case 'recovery': return who + ' recovered';
+    case 'disabled': return who + ' disabled' + why;
+    default: return (e.from && e.to ? e.from + ' → ' + e.to : who) + why + retry;
+  }
+}
+
+function renderEvents(d) {
+  const box = $('events');
+  box.replaceChildren();
+  const evs = (d.events || []).slice(0, 50);
+  if (!evs.length) { box.append(el('li', { class: 'muted', text: 'no switches yet' })); return; }
+  for (const e of evs) {
+    box.append(el('li', { class: 'wrap' }, [
+      timeEl(e.time),
+      el('span', { class: 'badge', text: e.kind || 'event' }), ' ',
+      e.route ? el('span', { class: 'muted', text: e.route + ': ' }) : null,
+      eventText(e),
+      e.detail ? el('div', { class: 'muted small', text: e.detail }) : null
+    ]));
+  }
+}
+
+function renderHealth(d) {
+  const h = d.health || {};
+  const items = [['dropped', 'dropped'], ['persist_errors', 'persist errors'], ['corrupt_lines', 'corrupt lines'],
+    ['downgraded', 'downgraded'], ['rejected_types', 'rejected'], ['inflight_bytes', 'in-flight bytes']];
+  $('health').replaceChildren(...items.map(([k, label]) => {
+    const v = h[k] || 0;
+    const hot = v && k !== 'inflight_bytes';
+    return el('span', { class: hot ? 'hot' : '' }, [label + ': ' + fmt(v) + (hot ? ' (attention)' : '')]);
+  }));
+}
+
+function render(d) {
+  data = d;
+  $('offline').hidden = !d.offline;
+  renderBanners(d);
+  renderCards(d);
+  renderModels();
+  renderChart(d);
+  renderRoutes(d);
+  renderEvents(d);
+  renderHealth(d);
+}
+
+async function poll() {
+  try {
+    const res = await fetch('/api/stats', { credentials: 'same-origin', cache: 'no-store' });
+    if (res.status === 401) { location.assign('/login'); return; }
+    if (!res.ok) throw new Error('status ' + res.status);
+    render(await res.json());
+    $('conn').hidden = true;
+    const now = new Date();
+    $('updated').dateTime = now.toISOString();
+    $('updated').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  } catch (err) {
+    $('conn').hidden = false;
+  }
+  setTimeout(poll, 5000);
+}
+poll();
+</script>
+</body>
+</html>

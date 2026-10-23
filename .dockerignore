@@ -1,0 +1,9 @@
+# Build context allow-list: the Dockerfile copies only go.mod, cmd/ and internal/.
+# Everything else (secrets, local config, telemetry, captures, binaries) stays out of the context.
+*
+!go.mod
+!go.sum
+!cmd/
+!internal/
+**/*_test.go
+**/testdata/
