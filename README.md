@@ -53,7 +53,7 @@ Every command prints its own help (`cbrt help`, `cbrt analyze help`, `cbrt proje
 
 | Command | What it does |
 |---|---|
-| `cbrt analyze install claude [--with <skill,…\|all>] [--write]` | Add the session hooks, the review rubric and the skills to Claude Code |
+| `cbrt analyze install claude [--with <skill,…\|all>] [--context-warn[=false]] [--write]` | Add the session hooks, the review rubric and the skills to Claude Code; `--context-warn` also warns before a prompt on a large or idle session ([details](docs/analyze.md#context-warning)) |
 | `cbrt analyze uninstall claude [--keep-skills\|--purge] [--write]` | Remove the hooks and skills; `--keep-skills` keeps the skills, `--purge` also deletes collected data |
 | `cbrt analyze run [--since 14d] [--tools claude,codex] [--project p] [--no-cache]` | Collect sessions and write the review's inputs |
 | `cbrt analyze excerpt <tool>/<store>/<session> <from> <to> [--context 2]` | A redacted transcript slice, as evidence |
@@ -63,6 +63,7 @@ Every command prints its own help (`cbrt help`, `cbrt analyze help`, `cbrt proje
 | `cbrt analyze run-note --review-tokens <n> [--run <run-id>]` | Record a review's token spend |
 | `cbrt analyze prune` | Delete output folders past the retention |
 | `cbrt hook record <adapter_id> <event>` | The hook command install adds (records one event; always exits 0) |
+| `cbrt hook warn claude` | The context warning hook `--context-warn` adds (prints a warning or nothing; always exits 0) |
 
 Skills, in Claude Code after `analyze install`:
 

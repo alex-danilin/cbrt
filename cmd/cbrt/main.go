@@ -7,6 +7,7 @@
 //	cbrt record -upstream <url> [-listen addr] [-out dir]
 //	cbrt statusline [-url url] [-key key] [-plain]
 //	cbrt hook record <adapter_id> <event>
+//	cbrt hook warn claude
 //	cbrt analyze <run|excerpt|rec|run-note|prune|install|uninstall> …
 //	cbrt projects [serve|connect|disconnect|list] …
 //	cbrt version
@@ -70,7 +71,7 @@ func main() {
 	case "analyze":
 		os.Exit(runAnalyze(args, os.Stdin, os.Stdout, os.Stderr))
 	case "hook":
-		os.Exit(runHook(args, os.Stdin, os.Stderr))
+		os.Exit(runHook(args, os.Stdin, os.Stdout, os.Stderr))
 	case "projects":
 		os.Exit(runProjects(args, os.Stdout, os.Stderr))
 	case "statusline":
@@ -112,6 +113,7 @@ const mainUsage = `usage:
   cbrt statusline [-url http://127.0.0.1:8080] [-key KEY] [-plain]   (Claude Code status line; reads its JSON on stdin)
   cbrt healthcheck [-url http://127.0.0.1:8080]                      (exit 0 if /healthz answers; for container HEALTHCHECKs)
   cbrt hook record <adapter_id> <event>                              (agent hook: spools stdin for cbrt analyze; always exits 0)
+  cbrt hook warn claude                                              (context warning hook, opt-in via analyze install; always exits 0)
   cbrt analyze run|excerpt|rec|install …                              (weekly review of agent sessions; "cbrt analyze help")
   cbrt projects [connect|disconnect|list|serve] …                     (progress of all your projects on one local page; "cbrt projects help")
   cbrt version

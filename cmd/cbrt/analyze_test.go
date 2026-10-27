@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/alex-danilin/cbrt/internal/skills"
 )
@@ -163,6 +164,71 @@ func TestAnalyzeInstallClaude(t *testing.T) {
 	}
 	if code, out, errs := analyzeCmd(t, "", "uninstall", "claude", "--write"); code != 0 || !strings.Contains(out, "no cbrt hooks to remove") {
 		t.Fatalf("second uninstall: %d %q %q", code, out, errs)
+	}
+}
+
+// TestAnalyzeInstallContextWarn: --context-warn adds the warning hook, a
+// later install keeps it, --context-warn=false and uninstall remove it.
+func TestAnalyzeInstallContextWarn(t *testing.T) {
+	_, claudeDir := analyzeHome(t)
+	settings := filepath.Join(claudeDir, "settings.json")
+	warnHooks := func() int {
+		b, _ := os.ReadFile(settings)
+		return strings.Count(string(b), `"warn"`)
+	}
+	if code, out, errs := analyzeCmd(t, "", "install", "claude", "--context-warn", "--write"); code != 0 ||
+		!strings.Contains(out, "add the context warning hook") || !strings.Contains(out, "300k") {
+		t.Fatalf("install --context-warn: %d %q %q", code, out, errs)
+	}
+	b, _ := os.ReadFile(settings)
+	if warnHooks() != 1 || !strings.Contains(string(b), "UserPromptSubmit") {
+		t.Fatalf("want one warning hook on UserPromptSubmit: %s", b)
+	}
+	if code, out, errs := analyzeCmd(t, "", "install", "claude", "--write"); code != 0 ||
+		!strings.Contains(out, "keep the context warning hook") || !strings.Contains(out, "already installed") || warnHooks() != 1 {
+		t.Fatalf("plain reinstall: %d %q %q", code, out, errs)
+	}
+	if code, out, errs := analyzeCmd(t, "", "install", "claude", "--context-warn=false", "--write"); code != 0 ||
+		!strings.Contains(out, "remove the context warning hook") || warnHooks() != 0 {
+		t.Fatalf("--context-warn=false: %d %q %q", code, out, errs)
+	}
+	if code, _, errs := analyzeCmd(t, "", "install", "claude", "--context-warn", "--write"); code != 0 || warnHooks() != 1 {
+		t.Fatalf("reinstall: %q", errs)
+	}
+	if code, _, errs := analyzeCmd(t, "", "uninstall", "claude", "--write"); code != 0 || warnHooks() != 0 {
+		t.Fatalf("uninstall: %q", errs)
+	}
+	if code, _, errs := analyzeCmd(t, "", "uninstall", "claude", "--context-warn"); code == 0 || !strings.Contains(errs, "--context-warn goes with install") {
+		t.Fatalf("uninstall --context-warn: %d %q", code, errs)
+	}
+}
+
+func TestHookWarnCommand(t *testing.T) {
+	home, _ := analyzeHome(t)
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(home, "config.json"), []byte(`{"v":1,"context_warn_tokens":50000}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	p := filepath.Join(dir, "s.jsonl")
+	line := `{"type":"assistant","timestamp":"` + time.Now().UTC().Format(time.RFC3339) + `","message":{"model":"m","usage":{"input_tokens":60000}}}` + "\n"
+	if err := os.WriteFile(p, []byte(line), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	in, _ := json.Marshal(map[string]string{"session_id": "abc", "transcript_path": p})
+	var out, errb bytes.Buffer
+	if code := runHook([]string{"warn", "claude"}, bytes.NewReader(in), &out, &errb); code != 0 {
+		t.Fatalf("exit %d: %s", code, errb.String())
+	}
+	var got struct {
+		SystemMessage string `json:"systemMessage"`
+	}
+	if err := json.Unmarshal(out.Bytes(), &got); err != nil || !strings.Contains(got.SystemMessage, "60k (warning at 50k)") {
+		t.Fatalf("stdout %q: %v", out.String(), err)
+	}
+	// Broken input prints nothing and still exits 0.
+	out.Reset()
+	if code := runHook([]string{"warn", "claude"}, strings.NewReader("junk"), &out, &errb); code != 0 || out.Len() != 0 {
+		t.Fatalf("junk stdin: exit %d, stdout %q", code, out.String())
 	}
 }
 

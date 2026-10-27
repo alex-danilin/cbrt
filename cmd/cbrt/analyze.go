@@ -37,9 +37,12 @@ const analyzeUsage = `usage: cbrt analyze <command>
   rec applied|declined|reverted <rec-id> [notes]   your decision on a recommendation
   run-note --review-tokens <n> [--run <run-id>]     record the review's token spend
   prune                              delete output folders past the retention
-  install claude [--with <skill,...|all>] [--write]
+  install claude [--with <skill,...|all>] [--context-warn[=false]] [--write]
         hooks, the /cbrt-multi-session-review skill and the optional skills named
-        (cbrt-session-review); shows the changes, --write applies them
+        (cbrt-session-review); shows the changes, --write applies them.
+        --context-warn adds a hook that warns before a prompt on a session above
+        context_warn_tokens (config.json, default 300000) or idle over an hour;
+        a later install keeps it, --context-warn=false removes it
   uninstall claude [--keep-skills|--purge] [--write]
         --keep-skills leaves the installed skills in place; --purge also deletes
         all collected data and settings backups
@@ -302,12 +305,15 @@ type claudeCommandHook struct {
 	Timeout int      `json:"timeout,omitempty"`
 }
 
+// warnEvent is the Claude Code event the context warning hook runs on.
+const warnEvent = "UserPromptSubmit"
+
 // isCbrtHook reports whether a hook is ours: exec form running some cbrt
-// binary with "hook record claude".
+// binary with "hook record claude" or "hook warn claude".
 func isCbrtHook(raw json.RawMessage) bool {
 	var h claudeCommandHook
 	if json.Unmarshal(raw, &h) != nil || h.Type != "command" ||
-		len(h.Args) < 3 || h.Args[0] != "hook" || h.Args[1] != "record" || h.Args[2] != "claude" {
+		len(h.Args) < 3 || h.Args[0] != "hook" || (h.Args[1] != "record" && h.Args[1] != "warn") || h.Args[2] != "claude" {
 		return false
 	}
 	// The command may be a Windows path read on a Unix host: split on both.
@@ -328,9 +334,28 @@ func sameJSON(a, b json.RawMessage) bool {
 	return reflect.DeepEqual(va, vb)
 }
 
+// hasWarnHook reports whether settings.json's hooks object holds cbrt's
+// context warning hook.
+func hasWarnHook(current json.RawMessage) bool {
+	var hooks map[string][]claudeHookEntry
+	if json.Unmarshal(current, &hooks) != nil {
+		return false
+	}
+	for _, e := range hooks[warnEvent] {
+		for _, raw := range e.Hooks {
+			var h claudeCommandHook
+			if isCbrtHook(raw) && json.Unmarshal(raw, &h) == nil && h.Args[1] == "warn" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // planClaudeHooks returns settings.json's hooks object with every cbrt hook
-// removed and, when install, one exec-form hook per event added.
-func planClaudeHooks(current json.RawMessage, exe string, events []string, install bool) (json.RawMessage, error) {
+// removed and, when install, one exec-form hook per event added, plus the
+// context warning hook when warn.
+func planClaudeHooks(current json.RawMessage, exe string, events []string, install, warn bool) (json.RawMessage, error) {
 	hooks := map[string][]claudeHookEntry{}
 	if len(current) > 0 && string(current) != "null" {
 		if err := json.Unmarshal(current, &hooks); err != nil {
@@ -362,6 +387,10 @@ func planClaudeHooks(current json.RawMessage, exe string, events []string, insta
 			h, _ := json.Marshal(claudeCommandHook{Type: "command", Command: exe, Args: []string{"hook", "record", "claude", ev}, Timeout: 10})
 			hooks[ev] = append(hooks[ev], claudeHookEntry{Hooks: []json.RawMessage{h}})
 		}
+		if warn {
+			h, _ := json.Marshal(claudeCommandHook{Type: "command", Command: exe, Args: []string{"hook", "warn", "claude"}, Timeout: 5})
+			hooks[warnEvent] = append(hooks[warnEvent], claudeHookEntry{Hooks: []json.RawMessage{h}})
+		}
 	}
 	if len(hooks) == 0 {
 		return nil, nil
@@ -375,11 +404,14 @@ func analyzeInstall(home string, install bool, args []string, stdout io.Writer) 
 	purge := fs.Bool("purge", false, "")
 	with := fs.String("with", "", "")
 	keepSkills := fs.Bool("keep-skills", false, "")
+	contextWarn := fs.Bool("context-warn", false, "")
 	if err := fs.Parse(reorderFlags(args)); err != nil {
 		return err
 	}
+	warnSet := false
+	fs.Visit(func(f *flag.Flag) { warnSet = warnSet || f.Name == "context-warn" })
 	if fs.NArg() != 1 || fs.Arg(0) != "claude" {
-		return errors.New("usage: cbrt analyze install claude [--with <skill,...|all>] [--write], or uninstall claude [--keep-skills|--purge] [--write] (Codex and Antigravity hooks come in a later phase)")
+		return errors.New("usage: cbrt analyze install claude [--with <skill,...|all>] [--context-warn[=false]] [--write], or uninstall claude [--keep-skills|--purge] [--write] (Codex and Antigravity hooks come in a later phase)")
 	}
 	switch {
 	case *purge && install:
@@ -388,6 +420,8 @@ func analyzeInstall(home string, install bool, args []string, stdout io.Writer) 
 		return errors.New("--keep-skills goes with uninstall")
 	case *with != "" && !install:
 		return errors.New("--with goes with install; uninstall removes every skill cbrt installed")
+	case warnSet && !install:
+		return errors.New("--context-warn goes with install; uninstall removes every cbrt hook")
 	case *keepSkills && *purge:
 		return errors.New("--keep-skills and --purge together would leave skills that read the rubric --purge deletes")
 	}
@@ -434,7 +468,10 @@ func analyzeInstall(home string, install bool, args []string, stdout io.Writer) 
 			return fmt.Errorf("%s is not valid JSON: %w", settingsPath, err)
 		}
 	}
-	newHooks, err := planClaudeHooks(top["hooks"], exe, events, install)
+	// A later install keeps the opt-in warning hook unless told otherwise.
+	hadWarn := hasWarnHook(top["hooks"])
+	warn := install && (*contextWarn || (!warnSet && hadWarn))
+	newHooks, err := planClaudeHooks(top["hooks"], exe, events, install, warn)
 	if err != nil {
 		return err
 	}
@@ -460,6 +497,16 @@ func analyzeInstall(home string, install bool, args []string, stdout io.Writer) 
 			settingsPath, strings.Join(events, ", "), exe)
 	default:
 		fmt.Fprintf(stdout, "%s: no cbrt hooks to remove; unchanged\n", settingsPath)
+	}
+	warnLine := fmt.Sprintf("%s: %s hook warn claude, warns from %dk of context; set context_warn_tokens in %s",
+		warnEvent, exe, cfg.ContextWarnTokens/1000, filepath.Join(home, "config.json"))
+	switch {
+	case warn && !hadWarn:
+		fmt.Fprintf(stdout, "%s: add the context warning hook (%s)\n", settingsPath, warnLine)
+	case warn:
+		fmt.Fprintf(stdout, "%s: keep the context warning hook (%s)\n", settingsPath, warnLine)
+	case install && hadWarn:
+		fmt.Fprintf(stdout, "%s: remove the context warning hook\n", settingsPath)
 	}
 	// Uninstall removes the skills cbrt made, never a hand-made skill of the
 	// same name; install removes the ones this cbrt no longer ships.

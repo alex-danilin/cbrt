@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,7 +17,7 @@ func TestHookRecord(t *testing.T) {
 	t.Setenv(analyze.HomeEnv, home)
 	var stderr bytes.Buffer
 	stdin := "{\"session\":\"s1\",\n\"note\":\"invented\"}\n"
-	if code := runHook([]string{"record", "fixturetool", "Ask"}, strings.NewReader(stdin), &stderr); code != 0 {
+	if code := runHook([]string{"record", "fixturetool", "Ask"}, strings.NewReader(stdin), io.Discard, &stderr); code != 0 {
 		t.Fatalf("exit %d", code)
 	}
 	if stderr.Len() != 0 {
@@ -35,7 +36,7 @@ func TestHookUsage(t *testing.T) {
 	t.Setenv(analyze.HomeEnv, t.TempDir())
 	for _, args := range [][]string{nil, {"record"}, {"record", "x"}, {"play", "x", "y"}, {"record", "x", "y", "z"}, {"record", "", "y"}} {
 		var stderr bytes.Buffer
-		if code := runHook(args, strings.NewReader(""), &stderr); code != 2 || !strings.Contains(stderr.String(), "usage") {
+		if code := runHook(args, strings.NewReader(""), io.Discard, &stderr); code != 2 || !strings.Contains(stderr.String(), "usage") {
 			t.Errorf("%q: exit %d, stderr %q", args, code, stderr.String())
 		}
 	}
@@ -53,7 +54,7 @@ func TestHookRecordFailureIsSilent(t *testing.T) {
 		t.Fatal(err)
 	}
 	var stderr bytes.Buffer
-	if code := runHook([]string{"record", "fixturetool", "End"}, strings.NewReader("{}"), &stderr); code != 0 {
+	if code := runHook([]string{"record", "fixturetool", "End"}, strings.NewReader("{}"), io.Discard, &stderr); code != 0 {
 		t.Fatalf("exit %d", code)
 	}
 	if stderr.Len() != 0 {
@@ -74,7 +75,7 @@ func TestHookErrorLogBounded(t *testing.T) {
 	if err := os.WriteFile(path, bytes.Repeat([]byte("x"), hookErrorLogMax), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	logHookError(home, "a", "e", os.ErrPermission)
+	logHookError(home, "record a e", os.ErrPermission)
 	st, err := os.Stat(path)
 	if err != nil || st.Size() >= hookErrorLogMax {
 		t.Fatalf("errors.log not rotated: %v %v", st, err)

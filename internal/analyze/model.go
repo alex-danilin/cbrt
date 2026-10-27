@@ -148,16 +148,22 @@ type TaskIdentity struct {
 // Config is CBRT_ANALYZE_HOME/config.json. Every field has a default; a
 // missing file is all defaults.
 type Config struct {
-	V                  int                   `json:"v"`
-	WindowDays         int                   `json:"window_days"`          // default 7
-	RangeGapHours      float64               `json:"range_gap_hours"`      // default 4
-	ExcerptTokens      int                   `json:"excerpt_tokens"`       // default 40000
-	DeepReadTokens     int                   `json:"deep_read_tokens"`     // default 20000
-	RetentionDays      int                   `json:"retention_days"`       // out/ and registry months; default 90
-	CbrtDataDirs       []string              `json:"cbrt_data_dirs"`       // default <UserConfigDir>/cbrt/data
-	ExcludeHomeProject *bool                 `json:"exclude_home_project"` // default true
-	Tools              map[string]ToolConfig `json:"tools"`
+	V                  int      `json:"v"`
+	WindowDays         int      `json:"window_days"`          // default 7
+	RangeGapHours      float64  `json:"range_gap_hours"`      // default 4
+	ExcerptTokens      int      `json:"excerpt_tokens"`       // default 40000
+	DeepReadTokens     int      `json:"deep_read_tokens"`     // default 20000
+	RetentionDays      int      `json:"retention_days"`       // out/ and registry months; default 90
+	CbrtDataDirs       []string `json:"cbrt_data_dirs"`       // default <UserConfigDir>/cbrt/data
+	ExcludeHomeProject *bool    `json:"exclude_home_project"` // default true
+	// ContextWarnTokens is the context size at which the opt-in context
+	// warning hook speaks up; default DefaultContextWarnTokens.
+	ContextWarnTokens int64                 `json:"context_warn_tokens"`
+	Tools             map[string]ToolConfig `json:"tools"`
 }
+
+// DefaultContextWarnTokens is Config.ContextWarnTokens's default.
+const DefaultContextWarnTokens = 300_000
 
 // ToolConfig overrides one adapter's defaults on this machine.
 type ToolConfig struct {
@@ -207,6 +213,9 @@ func LoadConfig(home string) (Config, error) {
 	}
 	if c.ExcludeHomeProject == nil {
 		c.ExcludeHomeProject = Bool(true)
+	}
+	if c.ContextWarnTokens <= 0 {
+		c.ContextWarnTokens = DefaultContextWarnTokens
 	}
 	c.V = ConfigVersion
 	return c, nil
