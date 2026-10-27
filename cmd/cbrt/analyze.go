@@ -334,22 +334,26 @@ func sameJSON(a, b json.RawMessage) bool {
 	return reflect.DeepEqual(va, vb)
 }
 
-// hasWarnHook reports whether settings.json's hooks object holds cbrt's
-// context warning hook.
-func hasWarnHook(current json.RawMessage) bool {
+// cbrtHooksIn reports whether settings.json's hooks object holds any cbrt
+// recording hook, and cbrt's context warning hook.
+func cbrtHooksIn(current json.RawMessage) (record, warn bool) {
 	var hooks map[string][]claudeHookEntry
 	if json.Unmarshal(current, &hooks) != nil {
-		return false
+		return false, false
 	}
-	for _, e := range hooks[warnEvent] {
-		for _, raw := range e.Hooks {
-			var h claudeCommandHook
-			if isCbrtHook(raw) && json.Unmarshal(raw, &h) == nil && h.Args[1] == "warn" {
-				return true
+	for ev, entries := range hooks {
+		for _, e := range entries {
+			for _, raw := range e.Hooks {
+				var h claudeCommandHook
+				if !isCbrtHook(raw) || json.Unmarshal(raw, &h) != nil {
+					continue
+				}
+				record = record || h.Args[1] == "record"
+				warn = warn || (h.Args[1] == "warn" && ev == warnEvent)
 			}
 		}
 	}
-	return false
+	return record, warn
 }
 
 // planClaudeHooks returns settings.json's hooks object with every cbrt hook
@@ -469,13 +473,23 @@ func analyzeInstall(home string, install bool, args []string, stdout io.Writer) 
 		}
 	}
 	// A later install keeps the opt-in warning hook unless told otherwise.
-	hadWarn := hasWarnHook(top["hooks"])
+	hadRecord, hadWarn := cbrtHooksIn(top["hooks"])
 	warn := install && (*contextWarn || (!warnSet && hadWarn))
 	newHooks, err := planClaudeHooks(top["hooks"], exe, events, install, warn)
 	if err != nil {
 		return err
 	}
 	hooksChanged := !sameJSON(top["hooks"], newHooks)
+	// Whether the recording hooks change on their own: the same plan with the
+	// warning hook left as it was. Its change is reported separately below.
+	recordChanged := hooksChanged
+	if install {
+		sameWarn, err := planClaudeHooks(top["hooks"], exe, events, true, hadWarn)
+		if err != nil {
+			return err
+		}
+		recordChanged = !sameJSON(top["hooks"], sameWarn)
+	}
 	if newHooks == nil {
 		delete(top, "hooks")
 	} else {
@@ -488,8 +502,14 @@ func analyzeInstall(home string, install bool, args []string, stdout io.Writer) 
 	toInstall := append(slices.Clone(skills.Required), extra...)
 
 	switch {
-	case hooksChanged:
-		verb := map[bool]string{true: "add", false: "remove"}[install]
+	case recordChanged:
+		verb := "remove"
+		switch {
+		case install && hadRecord:
+			verb = "update"
+		case install:
+			verb = "add"
+		}
 		fmt.Fprintf(stdout, "%s: %s cbrt hooks for %s (exec form: %s hook record claude <event>)\n",
 			settingsPath, verb, strings.Join(events, ", "), exe)
 	case install:

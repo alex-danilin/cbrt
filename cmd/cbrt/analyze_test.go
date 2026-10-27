@@ -177,7 +177,7 @@ func TestAnalyzeInstallContextWarn(t *testing.T) {
 		return strings.Count(string(b), `"warn"`)
 	}
 	if code, out, errs := analyzeCmd(t, "", "install", "claude", "--context-warn", "--write"); code != 0 ||
-		!strings.Contains(out, "add the context warning hook") || !strings.Contains(out, "300k") {
+		!strings.Contains(out, "add cbrt hooks") || !strings.Contains(out, "add the context warning hook") || !strings.Contains(out, "300k") {
 		t.Fatalf("install --context-warn: %d %q %q", code, out, errs)
 	}
 	b, _ := os.ReadFile(settings)
@@ -188,12 +188,28 @@ func TestAnalyzeInstallContextWarn(t *testing.T) {
 		!strings.Contains(out, "keep the context warning hook") || !strings.Contains(out, "already installed") || warnHooks() != 1 {
 		t.Fatalf("plain reinstall: %d %q %q", code, out, errs)
 	}
+	// Only the warning hook changes: the recording hooks are reported as
+	// already installed, not as added.
 	if code, out, errs := analyzeCmd(t, "", "install", "claude", "--context-warn=false", "--write"); code != 0 ||
-		!strings.Contains(out, "remove the context warning hook") || warnHooks() != 0 {
+		!strings.Contains(out, "remove the context warning hook") || !strings.Contains(out, "already installed") || warnHooks() != 0 {
 		t.Fatalf("--context-warn=false: %d %q %q", code, out, errs)
 	}
-	if code, _, errs := analyzeCmd(t, "", "install", "claude", "--context-warn", "--write"); code != 0 || warnHooks() != 1 {
-		t.Fatalf("reinstall: %q", errs)
+	if code, out, errs := analyzeCmd(t, "", "install", "claude", "--context-warn", "--write"); code != 0 || warnHooks() != 1 ||
+		!strings.Contains(out, "add the context warning hook") || !strings.Contains(out, "already installed") ||
+		strings.Contains(out, "add cbrt hooks") || strings.Contains(out, "update cbrt hooks") {
+		t.Fatalf("reinstall: %d %q %q", code, out, errs)
+	}
+	// Recording hooks stored with another binary path are updated, not added.
+	b, _ = os.ReadFile(settings)
+	exe, _ := os.Executable()
+	moved, _ := json.Marshal(exe + ".old")
+	cur, _ := json.Marshal(exe)
+	if err := os.WriteFile(settings, []byte(strings.ReplaceAll(string(b), string(cur), string(moved))), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if code, out, errs := analyzeCmd(t, "", "install", "claude"); code != 0 ||
+		!strings.Contains(out, "update cbrt hooks") || strings.Contains(out, "add cbrt hooks") {
+		t.Fatalf("moved binary: %d %q %q", code, out, errs)
 	}
 	if code, _, errs := analyzeCmd(t, "", "uninstall", "claude", "--write"); code != 0 || warnHooks() != 0 {
 		t.Fatalf("uninstall: %q", errs)
