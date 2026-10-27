@@ -293,10 +293,10 @@ func TestConnectExistingRepo(t *testing.T) {
 	}
 }
 
-func TestConnectKeepsExistingBlockAndImport(t *testing.T) {
+func TestConnectUpdatesBlockKeepsImport(t *testing.T) {
 	needGit(t, true)
 	e := newEnv(t)
-	agents := "# Rules\n\n" + BlockStart + "\nmy edited block\n" + BlockEnd + "\n\nMore rules.\n"
+	agents := "# Rules\n\n" + BlockStart + "\nan older block\n" + BlockEnd + "\n\nMore rules.\n"
 	claude := "Intro.\n  @AGENTS.md  \n"
 	dir := e.project(t, "kept", map[string]string{
 		"README.md": "# kept\n",
@@ -309,11 +309,28 @@ func TestConnectKeepsExistingBlockAndImport(t *testing.T) {
 	if err := Connect(dir, e.o); err != nil {
 		t.Fatal(err)
 	}
-	if after := snapshot(t, dir); !reflect.DeepEqual(before, after) {
-		t.Errorf("files changed:\n%v\n%v", before, after)
+	after := snapshot(t, dir)
+	if want := "# Rules\n\n" + RuleBlock + "\nMore rules.\n"; after["AGENTS.md"] != want {
+		t.Errorf("AGENTS.md:\n%q\nwant\n%q", after["AGENTS.md"], want)
 	}
-	if !strings.Contains(e.out.String(), "added kept to the project list") {
-		t.Errorf("output:\n%s", e.out)
+	delete(before, "AGENTS.md")
+	delete(after, "AGENTS.md")
+	if !reflect.DeepEqual(before, after) {
+		t.Errorf("other files changed:\n%v\n%v", before, after)
+	}
+	for _, want := range []string{"updated the plan rule block in AGENTS.md", "added kept to the project list"} {
+		if !strings.Contains(e.out.String(), want) {
+			t.Errorf("output lacks %q:\n%s", want, e.out)
+		}
+	}
+
+	// A current block is left alone.
+	e.out.Reset()
+	if err := Connect(dir, e.o); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(e.out.String(), "plan rule block") {
+		t.Errorf("a current block was rewritten:\n%s", e.out)
 	}
 }
 
@@ -668,6 +685,24 @@ func TestConnectFailingHookKeepsPending(t *testing.T) {
 func TestClean(t *testing.T) {
 	if got := Clean("a\tb\nc\x1b[31md\u0085e"); got != "a b c [31md e" {
 		t.Errorf("%q", got)
+	}
+}
+
+func TestReplaceBlock(t *testing.T) {
+	old := BlockStart + "\nold\n" + BlockEnd
+	for name, tc := range map[string]struct{ in, want string }{
+		"end":    {"# A\n\n" + old + "\n", "# A\n\n" + RuleBlock},
+		"middle": {"# A\n\n" + old + "\n\nMore.\n", "# A\n\n" + RuleBlock + "\nMore.\n"},
+		"no nl":  {old, strings.TrimSuffix(RuleBlock, "\n")},
+		"crlf":   {"# A\r\n\r\n" + strings.ReplaceAll(old, "\n", "\r\n") + "\r\n", "# A\r\n\r\n" + strings.ReplaceAll(RuleBlock, "\n", "\r\n")},
+	} {
+		got, ok := replaceBlock([]byte(tc.in), RuleBlock)
+		if !ok || string(got) != tc.want {
+			t.Errorf("%s: %q, %v; want %q", name, got, ok, tc.want)
+		}
+	}
+	if _, ok := replaceBlock([]byte("# A\n"+BlockStart+"\n"), RuleBlock); ok {
+		t.Errorf("an unterminated block was replaced")
 	}
 }
 

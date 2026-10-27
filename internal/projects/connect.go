@@ -31,6 +31,7 @@ const RuleBlock = BlockStart + `
 ## Plan and progress
 - The project plan is in PLAN.md. Read it before starting work.
 - Plan new work there first: milestones as ` + "`##`" + ` headings, tasks as ` + "`- [ ]`" + ` lines.
+- Each task is one atomic piece of work, not a collection of tasks: split a compound task into separate ` + "`- [ ]`" + ` lines.
 - Mark the task you start ` + "`- [>]`" + ` and set the ` + "`Now:`" + ` line. Mark it ` + "`- [x]`" + ` only with evidence (a passing test, a commit, command output) written after an em dash.
 - Only the user parks tasks: never write ` + "`- [~]`" + ` yourself (deferred or future work stays ` + "`- [ ]`" + `), and never delete or reword a parked task.
 - Keep PLAN.md short: done milestones may be collapsed to one line.
@@ -354,6 +355,18 @@ func Connect(dir string, o Options) error {
 	case err != nil:
 		return err
 	case bytes.Contains(b, []byte(BlockStart)):
+		nb, ok := replaceBlock(b, RuleBlock)
+		switch {
+		case !ok:
+			a.note("AGENTS.md has %s without %s: not edited; fix or remove the block and connect again", BlockStart, BlockEnd)
+		case !bytes.Equal(nb, b):
+			if !o.DryRun {
+				if err := replaceFile(agents, nb); err != nil {
+					return err
+				}
+			}
+			a.act("updated the plan rule block in AGENTS.md", "update the plan rule block in AGENTS.md")
+		}
 	default:
 		if !o.DryRun {
 			if err := replaceFile(agents, appendBlock(b, RuleBlock)); err != nil {
@@ -756,6 +769,22 @@ func appendBlock(b []byte, block string) []byte {
 		out = append(out, nl+nl...)
 	}
 	return append(out, block...)
+}
+
+// replaceBlock replaces the rule block in b with block, in b's line endings.
+// ok is false when b has no complete block.
+func replaceBlock(b []byte, block string) ([]byte, bool) {
+	s := string(b)
+	i := strings.Index(s, BlockStart)
+	if i < 0 {
+		return b, false
+	}
+	j := strings.Index(s[i:], BlockEnd)
+	if j < 0 {
+		return b, false
+	}
+	block = strings.ReplaceAll(strings.TrimSuffix(block, "\n"), "\n", lineEnding(b))
+	return []byte(s[:i] + block + s[i+j+len(BlockEnd):]), true
 }
 
 // removeBlock undoes appendBlock: it removes the rule block, its line end
