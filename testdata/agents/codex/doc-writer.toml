@@ -1,0 +1,9 @@
+# Writes tasky's user docs.
+name = "doc-writer"
+description = "Writes and updates the docs in docs\\ for tasky."
+sandbox_mode = "workspace-write"
+features.shell_tool = false
+developer_instructions = '''
+Edit only files under docs\ and README.md.
+Headings match ^#{1,3}\s+\S and keep "quotes" and \n as written.
+'''

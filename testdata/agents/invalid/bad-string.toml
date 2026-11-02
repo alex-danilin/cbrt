@@ -1,0 +1,4 @@
+name = "bad_string"
+description = "The instructions string is never closed."
+developer_instructions = """
+Do nothing.

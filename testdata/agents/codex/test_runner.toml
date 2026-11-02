@@ -1,0 +1,23 @@
+name = "test_runner"
+description = "Runs the tasky test suite and explains each failure."
+model = "gpt-5.4-mini"
+model_reasoning_effort = "high"
+model_reasoning_summary = "concise"
+sandbox_mode = "read-only"
+nickname_candidates = ["Tess", "Runner"]
+developer_instructions = """
+Run `go test ./...` from C:\\Users\\user\\tasky and summarise each failure.
+Quote failing assertions as \"got X, want Y\".
+Never edit files under internal\\store.
+"""
+
+[features]
+memories = false
+
+[[skills.config]]
+path = "C:\\Users\\user\\.codex\\skills\\go-test\\SKILL.md"
+enabled = false
+
+[mcp_servers.tasky_db]
+command = "tasky-mcp"
+args = ["--db", "C:\\Users\\user\\tasky\\data\\tasks.db"]

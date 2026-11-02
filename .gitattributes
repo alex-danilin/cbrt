@@ -1,3 +1,5 @@
 # Keep LF everywhere: gofmt checks and SSE test fixtures depend on exact line endings.
 * text=auto eol=lf
 *.exe binary
+# Agent fixtures reproduce Windows-saved files (CRLF, BOM): store them byte for byte.
+/testdata/agents/** -text

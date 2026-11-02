@@ -27,7 +27,7 @@ const repoRoot = "../.."
 // local folders, and this package, whose self-test plants fake leaks.
 var skipDirs = map[string]bool{
 	".git": true, ".gotmp": true, ".claude": true, "captures": true, "data": true, "dist": true,
-	"docs/internal": true, "scripts/privacy": true, ".cbrt": true,
+	"docs/internal": true, "scripts/privacy": true, ".cbrt": true, "external-verification": true,
 }
 
 // skipFiles are git-ignored local files that hold personal values by design,

@@ -7,6 +7,7 @@ Building, testing and releasing cbrt itself. Notes for coding agents working on 
 go vet ./... && go test ./...      # add -race on Linux/macOS (needs cgo)
 go run ./scripts/synth-clients && go run ./scripts/synth-upstream   # regenerate the synthetic gateway fixtures
 go run ./scripts/synth-transcripts/claude   # … and codex, antigravity: synthetic transcripts for the analyzer
+go run ./scripts/synth-agents               # synthetic custom agent files for cbrt agents import
 go test -tags local ./internal/analyze/adapters/...   # check the adapters against your own stores (prints counts only; never in CI)
 go test ./scripts/privacy           # privacy audit of the whole repository (run before pushing)
 go run scripts/ship.go [vX.Y.Z]     # push main and wait for CI; with a version also tag, wait for the release build and install it (Windows)
