@@ -16,7 +16,7 @@ func TestReadmeCoversHelp(t *testing.T) {
 	}
 	readme := string(b)
 	flagRe := regexp.MustCompile(`(?:^|[\s\[|(])(--?[a-z][a-z-]*)`)
-	for name, help := range map[string]string{"cbrt help": mainUsage, "cbrt analyze help": analyzeUsage, "cbrt projects help": projectsUsage} {
+	for name, help := range map[string]string{"cbrt help": mainUsage, "cbrt analyze help": analyzeUsage, "cbrt projects help": projectsUsage, "cbrt agents help": agentsUsage} {
 		for _, m := range flagRe.FindAllStringSubmatch(help, -1) {
 			if !strings.Contains(readme, m[1]) {
 				t.Errorf("%s names %s, README.md does not", name, m[1])
@@ -29,6 +29,7 @@ func TestReadmeCoversHelp(t *testing.T) {
 		"cbrt analyze run", "cbrt analyze excerpt", "cbrt analyze rec", "cbrt analyze run-note", "cbrt analyze prune",
 		"cbrt analyze install", "cbrt analyze uninstall",
 		"cbrt projects [serve]", "cbrt projects connect", "cbrt projects disconnect", "cbrt projects list", "cbrt projects check",
+		"cbrt agents import",
 	} {
 		if !strings.Contains(readme, "`"+cmd) {
 			t.Errorf("README.md has no row for %s", cmd)

@@ -154,7 +154,8 @@ func oneArg(fs *flag.FlagSet, args []string, usage string) (string, error) {
 		return "", err
 	}
 	if len(pos) != 1 || fs.NArg() != 0 {
-		return "", errors.New("usage: cbrt projects " + usage)
+		group, _, _ := strings.Cut(fs.Name(), " ") // "projects connect" -> "projects"
+		return "", errors.New("usage: cbrt " + group + " " + usage)
 	}
 	return pos[0], nil
 }

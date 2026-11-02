@@ -74,6 +74,8 @@ func main() {
 		os.Exit(runHook(args, os.Stdin, os.Stdout, os.Stderr))
 	case "projects":
 		os.Exit(runProjects(args, os.Stdout, os.Stderr))
+	case "agents":
+		os.Exit(runAgents(args, os.Stdout, os.Stderr))
 	case "statusline":
 		os.Exit(statusline.Main(args))
 	case "healthcheck":
@@ -116,6 +118,7 @@ const mainUsage = `usage:
   cbrt hook warn claude                                              (context warning hook, opt-in via analyze install; always exits 0)
   cbrt analyze run|excerpt|rec|install …                              (weekly review of agent sessions; "cbrt analyze help")
   cbrt projects [connect|disconnect|list|serve] …                     (progress of all your projects on one local page; "cbrt projects help")
+  cbrt agents import …                                                (one agent for Claude Code, Antigravity and Codex; "cbrt agents help")
   cbrt version
 `
 

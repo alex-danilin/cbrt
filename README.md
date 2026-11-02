@@ -28,7 +28,7 @@ No config file is needed, and your Claude Code and Codex settings are not change
 
 ## Commands
 
-Every command prints its own help (`cbrt help`, `cbrt analyze help`, `cbrt projects help`). `analyze install` and `uninstall` only show what they would change until you add `--write`; `projects connect` and `check` show it with `--dry-run`.
+Every command prints its own help (`cbrt help`, `cbrt analyze help`, `cbrt projects help`, `cbrt agents help`). `analyze install` and `uninstall` only show what they would change until you add `--write`; `projects connect` and `check` show it with `--dry-run`.
 
 ### Agents
 
@@ -82,11 +82,18 @@ Skills, in Claude Code after `analyze install`:
 | `cbrt projects list` | One line per project |
 | `cbrt projects check <name\|dir> --agent claude\|codex\|agy [--dry-run] [--timeout 10m]` | Ask an agent, read-only, whether the work follows the plan |
 
+### Cross-tool agents
+
+| Command | What it does |
+|---|---|
+| `cbrt agents import <file> [--from claude\|antigravity\|codex] [--force] [--dry-run]` | Read a Claude Code or Antigravity agent (`.md`) or a Codex agent (`.toml`) into cbrt as `cbrt-<name>`, and show what each tool keeps, maps or drops ([details](docs/agents.md)) |
+
 ## Documentation
 
 - [The gateway](docs/gateway.md): running it, connecting Claude Code, Codex and other clients, subscription mode, what is translated, dropped or refused, caveats, endpoints and security.
 - [Session review](docs/analyze.md): what `cbrt analyze` measures, installing it, the weekly review and what stays on your machine.
 - [Project tracking](docs/projects.md): connecting projects, the page, checks and keeping plans private.
+- [Cross-tool agents](docs/agents.md): importing an agent, the canonical file and what each tool keeps.
 - [Deployment](docs/deploy.md): Docker, Compose with Ollama, offline setups, systemd, Windows, cloud VMs.
 - [Benchmarks](docs/benchmarks.md): overhead, memory and live smoke tests.
 - [Development](docs/development.md): building, testing and releasing cbrt.
