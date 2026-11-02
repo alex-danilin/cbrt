@@ -87,6 +87,7 @@ Skills, in Claude Code after `analyze install`:
 | Command | What it does |
 |---|---|
 | `cbrt agents import <file> [--from claude\|antigravity\|codex] [--force] [--dry-run]` | Read a Claude Code or Antigravity agent (`.md`) or a Codex agent (`.toml`) into cbrt as `cbrt-<name>`, and show what each tool keeps, maps or drops ([details](docs/agents.md)) |
+| `cbrt agents install <name> [--tools claude,antigravity,codex] [--write]` | Write an imported agent into Claude Code, Antigravity and Codex and list what each drops; shows the changes until `--write` ([details](docs/agents.md#install)) |
 
 ## Documentation
 

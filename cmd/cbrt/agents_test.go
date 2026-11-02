@@ -49,3 +49,50 @@ func TestAgentsImportCommand(t *testing.T) {
 		t.Fatalf("unknown command: exit %d", code)
 	}
 }
+
+func TestAgentsInstallCommand(t *testing.T) {
+	home, user := t.TempDir(), t.TempDir()
+	t.Setenv(agents.HomeEnv, home)
+	t.Setenv("HOME", user)
+	t.Setenv("USERPROFILE", user)
+	run := func(args ...string) (int, string, string) {
+		var out, errb bytes.Buffer
+		code := runAgents(args, &out, &errb)
+		return code, out.String(), errb.String()
+	}
+	src := filepath.Join("..", "..", "testdata", "agents", "claude", "reviewer.md")
+	if code, out, errs := run("import", src); code != 0 {
+		t.Fatalf("import: exit %d\n%s%s", code, out, errs)
+	}
+	claude := filepath.Join(user, ".claude", "agents", "cbrt-reviewer.md")
+	agy := filepath.Join(user, ".gemini", "config", "agents", "cbrt-reviewer", "agent.md")
+	codex := filepath.Join(user, ".codex", "agents", "cbrt-reviewer.toml")
+
+	code, out, errs := run("install", "reviewer")
+	if code != 0 || !strings.Contains(out, "would write") || !strings.Contains(out, "--write") {
+		t.Fatalf("dry run: exit %d\n%s%s", code, out, errs)
+	}
+	if ents, _ := os.ReadDir(user); len(ents) != 0 {
+		t.Fatalf("dry run wrote %d entries", len(ents))
+	}
+	if code, out, errs = run("install", "--tools", "claude,agy", "reviewer", "--write"); code != 0 {
+		t.Fatalf("--tools subset: exit %d\n%s%s", code, out, errs)
+	}
+	for p, want := range map[string]bool{claude: true, agy: true, codex: false} {
+		if _, err := os.Stat(p); (err == nil) != want {
+			t.Errorf("%s exists: %v, want %v", p, err == nil, want)
+		}
+	}
+	if code, out, errs = run("install", "cbrt-reviewer", "--write"); code != 0 || strings.Count(out, "replace") != 2 {
+		t.Fatalf("--write: exit %d\n%s%s", code, out, errs)
+	}
+	if _, err := os.Stat(codex); err != nil {
+		t.Error(err)
+	}
+	if code, _, errs = run("install", "reviewer", "--tools", "vim"); code != 1 || !strings.Contains(errs, "unknown tool") {
+		t.Fatalf("unknown tool: exit %d, %s", code, errs)
+	}
+	if code, _, errs = run("install", "nobody"); code != 1 || !strings.Contains(errs, "cbrt-reviewer") {
+		t.Fatalf("unknown agent: exit %d, %s", code, errs)
+	}
+}

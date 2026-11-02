@@ -8,7 +8,7 @@ Claude Code, Antigravity CLI and Codex CLI each read custom agents, in different
 | Antigravity CLI | `~/.gemini/config/agents/<name>/agent.md` or `<name>.md`, `.agents/agents/…` | Markdown with YAML frontmatter |
 | Codex CLI | `~/.codex/agents/<name>.toml`, `.codex/agents/<name>.toml` | TOML; the instructions go in `developer_instructions` |
 
-`cbrt agents` keeps one copy of an agent and (in a later release) installs it into all three.
+`cbrt agents` keeps one copy of an agent and installs it into all three.
 
 ## Import
 
@@ -23,6 +23,26 @@ Import reads the file, never changes it, and writes the canonical copy to cbrt's
 - `--dry-run` prints the report and writes nothing.
 
 The canonical file uses Claude Code's frontmatter and tool names, the widest of the three. Antigravity tool names are mapped to Claude's (`view_file` to `Read`, `run_command` to `Bash`, …). From a Codex agent, `model_reasoning_effort` becomes `effort`, `sandbox_mode = "read-only"` becomes `permissionMode: plan`, and `features.shell_tool = false` becomes `disallowedTools: Bash, PowerShell`.
+
+## Install
+
+```
+cbrt agents install reviewer            # show what would change
+cbrt agents install reviewer --write    # write the files
+```
+
+Install takes an imported agent (with or without the `cbrt-` prefix) and writes it where each tool reads it:
+
+| Tool | File |
+|---|---|
+| Claude Code | `~/.claude/agents/cbrt-<name>.md` |
+| Antigravity CLI | `~/.gemini/config/agents/cbrt-<name>/agent.md` |
+| Codex CLI | `~/.codex/agents/cbrt-<name>.toml` |
+
+- Without `--write` it changes nothing and prints, per tool, what it would do and every field that tool drops (D or W, see below).
+- `--tools claude,codex` limits it to some tools (`agy` is Antigravity); the default is all three.
+- Every file cbrt writes carries the comment `Installed by cbrt agents install: …`. A file with it is replaced on the next install. A file without it is yours: cbrt copies it to `<file>.bak` once, then writes. If that `.bak` already exists, cbrt refuses that tool (it never overwrites a backup), installs the others and exits with an error.
+- Only fields a tool keeps or maps are written. For Antigravity, tools get Antigravity names (a tool with no equivalent is left out, so the agent gets fewer tools, never all of them), `mcpServers` becomes `inheritMcp: true`, and `mainAgent` and `subagent` default to `true`. For Codex, the body becomes `developer_instructions`, `effort` becomes `model_reasoning_effort` (`xhigh` and `max` as `high`), and a tool list without a shell, or a deny list with one, becomes `features.shell_tool = false`.
 
 ## The report
 
