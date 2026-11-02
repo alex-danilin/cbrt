@@ -95,4 +95,23 @@ func TestAgentsInstallCommand(t *testing.T) {
 	if code, _, errs = run("install", "nobody"); code != 1 || !strings.Contains(errs, "cbrt-reviewer") {
 		t.Fatalf("unknown agent: exit %d, %s", code, errs)
 	}
+
+	if code, out, errs = run("list"); code != 0 || !strings.Contains(out, "cbrt-reviewer") || strings.Count(out, "installed") != 3 {
+		t.Fatalf("list: exit %d\n%s%s", code, out, errs)
+	}
+	if code, out, _ = run("uninstall", "reviewer"); code != 0 || !strings.Contains(out, "would remove") {
+		t.Fatalf("uninstall dry run: exit %d\n%s", code, out)
+	}
+	if code, out, errs = run("uninstall", "reviewer", "--tools", "codex", "--write"); code != 0 {
+		t.Fatalf("uninstall --tools codex: exit %d\n%s%s", code, out, errs)
+	}
+	if _, err := os.Stat(codex); err == nil {
+		t.Error("uninstall left Codex's file")
+	}
+	if _, err := os.Stat(claude); err != nil {
+		t.Errorf("uninstall --tools codex removed Claude Code's file: %v", err)
+	}
+	if code, _, errs = run("list", "x"); code != 1 || !strings.Contains(errs, "unexpected arguments") {
+		t.Fatalf("list with an argument: exit %d, %s", code, errs)
+	}
 }

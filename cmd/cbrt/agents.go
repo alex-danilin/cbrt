@@ -26,6 +26,15 @@ const agentsUsage = `usage: cbrt agents <command>
         (agy is antigravity; default all). cbrt replaces its own files; a file
         of yours is backed up to <file>.bak first, and never twice
 
+  uninstall <name> [--tools claude,antigravity,codex] [--write]
+        remove the files install wrote (only files with cbrt's marker) and put
+        a <file>.bak back. Shows the changes only until you add --write. The
+        imported copy stays in the agents folder
+
+  list  every imported agent and, per tool, whether it is installed, a file
+        of yours has its name, or it is missing; installed agents whose
+        imported copy is gone are listed too
+
 Agents folder: $CBRT_AGENTS_HOME, default <config dir>/cbrt/agents.
 `
 
@@ -67,18 +76,30 @@ func runAgents(args []string, stdout, stderr io.Writer) int {
 			break
 		}
 		o := agents.InstallOptions{Write: *write, Out: stdout}
-		for _, s := range strings.Split(*tools, ",") {
-			if s = strings.TrimSpace(s); s == "" {
-				continue
-			}
-			var t agents.Tool
-			if t, err = agents.ParseTool(s); err != nil {
-				break
-			}
-			o.Tools = append(o.Tools, t)
-		}
-		if err == nil {
+		if o.Tools, err = parseTools(*tools); err == nil {
 			err = agents.Install(name, o)
+		}
+	case "uninstall":
+		var name string
+		fs := flag.NewFlagSet("agents uninstall", flag.ContinueOnError)
+		fs.SetOutput(stderr)
+		tools := fs.String("tools", "", "comma-separated: claude, antigravity (agy), codex (default: all)")
+		write := fs.Bool("write", false, "remove the files (default: show the changes only)")
+		if name, err = oneArg(fs, args, "uninstall <name> [--tools claude,antigravity,codex] [--write]"); err != nil {
+			break
+		}
+		o := agents.UninstallOptions{Write: *write, Out: stdout}
+		if o.Tools, err = parseTools(*tools); err == nil {
+			err = agents.Uninstall(name, o)
+		}
+	case "list":
+		if len(args) > 0 {
+			err = fmt.Errorf("unexpected arguments %q", args)
+			break
+		}
+		var es []agents.Entry
+		if es, err = agents.ListAgents("", ""); err == nil {
+			agents.WriteList(stdout, es)
 		}
 	case "help", "-h", "--help":
 		fmt.Fprint(stdout, agentsUsage)
@@ -94,4 +115,20 @@ func runAgents(args []string, stdout, stderr io.Writer) int {
 		return 1
 	}
 	return 0
+}
+
+// parseTools reads --tools: comma-separated tool names, empty for all.
+func parseTools(s string) ([]agents.Tool, error) {
+	var tools []agents.Tool
+	for _, name := range strings.Split(s, ",") {
+		if name = strings.TrimSpace(name); name == "" {
+			continue
+		}
+		t, err := agents.ParseTool(name)
+		if err != nil {
+			return nil, err
+		}
+		tools = append(tools, t)
+	}
+	return tools, nil
 }

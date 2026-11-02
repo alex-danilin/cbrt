@@ -29,7 +29,7 @@ func TestReadmeCoversHelp(t *testing.T) {
 		"cbrt analyze run", "cbrt analyze excerpt", "cbrt analyze rec", "cbrt analyze run-note", "cbrt analyze prune",
 		"cbrt analyze install", "cbrt analyze uninstall",
 		"cbrt projects [serve]", "cbrt projects connect", "cbrt projects disconnect", "cbrt projects list", "cbrt projects check",
-		"cbrt agents import", "cbrt agents install",
+		"cbrt agents import", "cbrt agents install", "cbrt agents uninstall", "cbrt agents list",
 	} {
 		if !strings.Contains(readme, "`"+cmd) {
 			t.Errorf("README.md has no row for %s", cmd)
