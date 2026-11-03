@@ -273,3 +273,52 @@ func TestInstallRefusesEditedName(t *testing.T) {
 		t.Fatalf("wrote %d entries into the user home", len(ents))
 	}
 }
+
+func TestInstallAll(t *testing.T) {
+	user := t.TempDir()
+	var out bytes.Buffer
+	if err := InstallAll(InstallOptions{Home: t.TempDir(), UserHome: user, Out: &out}); err == nil || !strings.Contains(err.Error(), "no agents") {
+		t.Fatalf("empty folder: %v", err)
+	}
+
+	home, imported := importAll(t)
+	// A file of the user's with a backup beside it: Claude Code is refused
+	// for cbrt-reviewer, and every other agent and tool still installs.
+	mine := TargetPath(Claude, user, "cbrt-reviewer")
+	for _, p := range []string{mine, mine + ".bak"} {
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte("mine\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	out.Reset()
+	if err := InstallAll(InstallOptions{Home: home, UserHome: user, Out: &out}); err == nil {
+		t.Fatalf("dry run with a refused tool: no error\n%s", out.String())
+	}
+	if n := strings.Count(out.String(), "dry run: nothing changed"); n != 1 {
+		t.Errorf("dry-run note printed %d times, want once", n)
+	}
+
+	out.Reset()
+	err := InstallAll(InstallOptions{Home: home, UserHome: user, Write: true, Out: &out})
+	if err == nil || !strings.Contains(err.Error(), "1 of 9") || !strings.Contains(err.Error(), "cbrt-reviewer") {
+		t.Fatalf("write: %v\n%s", err, out.String())
+	}
+	for _, a := range imported {
+		for _, tool := range Tools {
+			p := TargetPath(tool, user, a.Name)
+			raw, err := os.ReadFile(p)
+			if err != nil {
+				t.Errorf("%s: %v", p, err)
+				continue
+			}
+			want := !(a.Name == "cbrt-reviewer" && tool == Claude)
+			if got := strings.Contains(string(raw), Marker); got != want {
+				t.Errorf("%s has cbrt's marker: %v, want %v", p, got, want)
+			}
+		}
+	}
+}

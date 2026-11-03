@@ -19,12 +19,14 @@ const agentsUsage = `usage: cbrt agents <command>
         --from overrides the detected tool; --force replaces an earlier
         import; --dry-run shows the report and writes nothing
 
-  install <name> [--tools claude,antigravity,codex] [--write]
+  install <name>|--all [--tools claude,antigravity,codex] [--write]
         write an imported agent into each tool's agent folder (~/.claude/agents,
         ~/.gemini/config/agents, ~/.codex/agents) and list what each tool drops.
-        Shows the changes only until you add --write. --tools picks the tools
-        (agy is antigravity; default all). cbrt replaces its own files; a file
-        of yours is backed up to <file>.bak first, and never twice
+        --all installs every imported agent (one that fails does not stop the
+        rest), e.g. on a new machine. Shows the changes only until you add
+        --write. --tools picks the tools (agy is antigravity; default all).
+        cbrt replaces its own files; a file of yours is backed up to
+        <file>.bak first, and never twice
 
   uninstall <name> [--tools claude,antigravity,codex] [--write]
         remove the files install wrote (only files with cbrt's marker) and put
@@ -72,11 +74,22 @@ func runAgents(args []string, stdout, stderr io.Writer) int {
 		fs.SetOutput(stderr)
 		tools := fs.String("tools", "", "comma-separated: claude, antigravity (agy), codex (default: all)")
 		write := fs.Bool("write", false, "write the files (default: show the changes only)")
-		if name, err = oneArg(fs, args, "install <name> [--tools claude,antigravity,codex] [--write]"); err != nil {
+		all := fs.Bool("all", false, "install every imported agent")
+		const usage = "install <name>|--all [--tools claude,antigravity,codex] [--write]"
+		if name, err = optArg(fs, args, usage); err != nil {
+			break
+		}
+		if (name == "") != *all {
+			err = errors.New("usage: cbrt agents " + usage)
 			break
 		}
 		o := agents.InstallOptions{Write: *write, Out: stdout}
-		if o.Tools, err = parseTools(*tools); err == nil {
+		if o.Tools, err = parseTools(*tools); err != nil {
+			break
+		}
+		if *all {
+			err = agents.InstallAll(o)
+		} else {
 			err = agents.Install(name, o)
 		}
 	case "uninstall":

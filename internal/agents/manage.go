@@ -131,14 +131,12 @@ func ListAgents(home, userHome string) ([]Entry, error) {
 		}
 	}
 	names := map[string]bool{}
-	ents, err := os.ReadDir(home)
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
+	imported, err := importedNames(home)
+	if err != nil {
 		return nil, err
 	}
-	for _, e := range ents {
-		if n, ok := strings.CutSuffix(e.Name(), ".md"); ok && !e.IsDir() && nameRe.MatchString(n) {
-			names[n] = true
-		}
+	for _, n := range imported {
+		names[n] = true
 	}
 	installed := map[string]bool{}
 	for _, t := range Tools {
@@ -163,6 +161,22 @@ func ListAgents(home, userHome string) ([]Entry, error) {
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
 	return out, nil
+}
+
+// importedNames lists the agents in the canonical folder, sorted; a missing
+// folder has none.
+func importedNames(home string) ([]string, error) {
+	ents, err := os.ReadDir(home)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return nil, err
+	}
+	var names []string
+	for _, e := range ents {
+		if n, ok := strings.CutSuffix(e.Name(), ".md"); ok && !e.IsDir() && nameRe.MatchString(n) {
+			names = append(names, n)
+		}
+	}
+	return names, nil
 }
 
 func stateOf(path string) State {

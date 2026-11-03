@@ -130,6 +130,39 @@ func projectsFlags(name string, stderr io.Writer) *flag.FlagSet {
 
 // oneArg parses flags placed before or after the single positional argument.
 func oneArg(fs *flag.FlagSet, args []string, usage string) (string, error) {
+	pos, err := positional(fs, args)
+	if err != nil {
+		return "", err
+	}
+	if len(pos) != 1 {
+		return "", usageError(fs, usage)
+	}
+	return pos[0], nil
+}
+
+// optArg is oneArg for an optional positional argument: "" when there is none.
+func optArg(fs *flag.FlagSet, args []string, usage string) (string, error) {
+	pos, err := positional(fs, args)
+	if err != nil {
+		return "", err
+	}
+	if len(pos) > 1 {
+		return "", usageError(fs, usage)
+	}
+	if len(pos) == 0 {
+		return "", nil
+	}
+	return pos[0], nil
+}
+
+func usageError(fs *flag.FlagSet, usage string) error {
+	group, _, _ := strings.Cut(fs.Name(), " ") // "projects connect" -> "projects"
+	return errors.New("usage: cbrt " + group + " " + usage)
+}
+
+// positional parses the flags in args, wherever they are, and returns the
+// other arguments.
+func positional(fs *flag.FlagSet, args []string) ([]string, error) {
 	var flags, pos []string
 	for i := 0; i < len(args); i++ {
 		a := args[i]
@@ -151,13 +184,12 @@ func oneArg(fs *flag.FlagSet, args []string, usage string) (string, error) {
 		}
 	}
 	if err := fs.Parse(flags); err != nil {
-		return "", err
+		return nil, err
 	}
-	if len(pos) != 1 || fs.NArg() != 0 {
-		group, _, _ := strings.Cut(fs.Name(), " ") // "projects connect" -> "projects"
-		return "", errors.New("usage: cbrt " + group + " " + usage)
+	if fs.NArg() != 0 { // flags after a "--" terminator
+		return nil, errors.New("unexpected arguments " + strings.Join(fs.Args(), " "))
 	}
-	return pos[0], nil
+	return pos, nil
 }
 
 // projectsListen checks that addr is a loopback host and port: the page has

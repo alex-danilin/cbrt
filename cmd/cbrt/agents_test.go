@@ -114,4 +114,16 @@ func TestAgentsInstallCommand(t *testing.T) {
 	if code, _, errs = run("list", "x"); code != 1 || !strings.Contains(errs, "unexpected arguments") {
 		t.Fatalf("list with an argument: exit %d, %s", code, errs)
 	}
+
+	if code, out, errs = run("install", "--all", "--tools", "codex", "--write"); code != 0 || !strings.Contains(out, "cbrt-reviewer") {
+		t.Fatalf("--all: exit %d\n%s%s", code, out, errs)
+	}
+	if _, err := os.Stat(codex); err != nil {
+		t.Errorf("--all left out Codex: %v", err)
+	}
+	for _, args := range [][]string{{"install"}, {"install", "reviewer", "--all"}, {"install", "a", "b"}} {
+		if code, _, errs = run(args...); code != 1 || !strings.Contains(errs, "usage: cbrt agents install") {
+			t.Errorf("%q: exit %d, %s", args, code, errs)
+		}
+	}
 }

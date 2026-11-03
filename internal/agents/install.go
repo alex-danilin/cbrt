@@ -171,23 +171,77 @@ func tomlBasic(s string) string {
 // <file>.bak; when that backup already exists the tool is refused (a backup
 // is never overwritten) and the others still run.
 func Install(name string, o InstallOptions) error {
-	out := o.Out
-	if out == nil {
-		out = io.Discard
-	}
-	canon, err := CanonicalName(name)
+	o, err := o.resolved()
 	if err != nil {
 		return err
 	}
-	home := o.Home
-	if home == "" {
-		home = Home()
+	err = installAgent(name, o)
+	o.dryRunNote()
+	return err
+}
+
+// InstallAll installs every agent in the canonical folder, in name order. An
+// agent that fails is reported and the others still run; the error names
+// every agent that was not fully installed.
+func InstallAll(o InstallOptions) error {
+	o, err := o.resolved()
+	if err != nil {
+		return err
 	}
-	userHome := o.UserHome
-	if userHome == "" {
-		if userHome, err = os.UserHomeDir(); err != nil {
-			return err
+	names, err := importedNames(o.Home)
+	if err != nil {
+		return err
+	}
+	if len(names) == 0 {
+		return fmt.Errorf("no agents in %s: run cbrt agents import <file>", o.Home)
+	}
+	var failed []string
+	for i, n := range names {
+		if i > 0 {
+			fmt.Fprintln(o.Out)
 		}
+		fmt.Fprintf(o.Out, "%s\n", n)
+		if err := installAgent(n, o); err != nil {
+			fmt.Fprintf(o.Out, "  error: %v\n", err)
+			failed = append(failed, n)
+		}
+	}
+	o.dryRunNote()
+	if len(failed) > 0 {
+		return fmt.Errorf("%d of %d agents not fully installed: %s", len(failed), len(names), strings.Join(failed, ", "))
+	}
+	return nil
+}
+
+// resolved fills in the defaults: Out, Home and UserHome.
+func (o InstallOptions) resolved() (InstallOptions, error) {
+	if o.Out == nil {
+		o.Out = io.Discard
+	}
+	if o.Home == "" {
+		o.Home = Home()
+	}
+	if o.UserHome == "" {
+		var err error
+		if o.UserHome, err = os.UserHomeDir(); err != nil {
+			return o, err
+		}
+	}
+	return o, nil
+}
+
+func (o InstallOptions) dryRunNote() {
+	if !o.Write {
+		fmt.Fprintln(o.Out, "dry run: nothing changed; add --write to apply")
+	}
+}
+
+// installAgent installs one agent with resolved options.
+func installAgent(name string, o InstallOptions) error {
+	out, home, userHome := o.Out, o.Home, o.UserHome
+	canon, err := CanonicalName(name)
+	if err != nil {
+		return err
 	}
 	src := filepath.Join(home, canon+".md")
 	if _, err := os.Stat(src); errors.Is(err, os.ErrNotExist) {
@@ -224,9 +278,6 @@ func Install(name string, o InstallOptions) error {
 				fmt.Fprintf(out, "  %c %-22s %s\n", n.Code, n.Field, n.Detail)
 			}
 		}
-	}
-	if !o.Write {
-		fmt.Fprintln(out, "dry run: nothing changed; add --write to apply")
 	}
 	if len(failed) > 0 {
 		return fmt.Errorf("not installed for %s", strings.Join(failed, ", "))
@@ -313,13 +364,7 @@ func writeAtomic(path string, data []byte) error {
 
 // available lists the agents in the canonical folder, for an error message.
 func available(home string) string {
-	ents, _ := os.ReadDir(home)
-	var names []string
-	for _, e := range ents {
-		if n, ok := strings.CutSuffix(e.Name(), ".md"); ok && !e.IsDir() {
-			names = append(names, n)
-		}
-	}
+	names, _ := importedNames(home)
 	if len(names) == 0 {
 		return "none imported yet: run cbrt agents import <file>"
 	}
