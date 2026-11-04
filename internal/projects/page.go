@@ -16,6 +16,7 @@ import (
 	"net/url"
 	"os/exec"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -197,6 +198,7 @@ type pageData struct {
 	Token     string
 	Agents    []string
 	Summary   summary
+	Suggest   suggestData
 }
 
 func (pageData) PublicMarker() string { return PublicMarker }
@@ -320,6 +322,16 @@ type ServerOptions struct {
 	// nil and 0 = ExecRun and DefaultAgentTimeout.
 	Run          RunFunc
 	CheckTimeout time.Duration
+	// Recent lists the coding-agent sessions of the last SuggestWindow for
+	// the "not connected yet" section; nil = no suggestions. It takes
+	// seconds, so only StartSuggestions and RefreshSuggestions call it.
+	Recent func(ctx context.Context) ([]RecentSession, error)
+	// Suggest are the folder rules for the suggestions; tests set them.
+	Suggest SuggestOptions
+	// Dismissed reads and Dismiss records the folders the user dismissed;
+	// nil Dismiss = no dismiss buttons.
+	Dismissed func() ([]string, error)
+	Dismiss   func(dir string) error
 }
 
 // Server serves the overview page at "/" and its two form endpoints,
@@ -334,6 +346,11 @@ type Server struct {
 	// checks by project path: a running or failed check started here
 	checks map[string]*checkRun
 	wg     sync.WaitGroup // running checks (tests wait for them)
+
+	// the latest suggestions (RefreshSuggestions)
+	sugg     []Suggestion
+	suggDone bool // a refresh finished at least once
+	suggErr  string
 }
 
 type checkRun struct {
@@ -374,11 +391,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/":
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
 			w.Header().Set("Allow", "GET, HEAD")
-			http.Error(w, "the page only answers GET; forms post to /api/park and /api/check", http.StatusMethodNotAllowed)
+			http.Error(w, "the page only answers GET; forms post to /api/park, /api/check and /api/dismiss", http.StatusMethodNotAllowed)
 			return
 		}
 		s.page(w, r)
-	case "/api/park", "/api/check":
+	case "/api/park", "/api/check", "/api/dismiss":
 		if r.Method != http.MethodPost {
 			w.Header().Set("Allow", "POST")
 			http.Error(w, "POST only", http.StatusMethodNotAllowed)
@@ -395,6 +412,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		if subtle.ConstantTimeCompare([]byte(r.PostForm.Get("token")), []byte(s.o.Token)) != 1 {
 			http.Error(w, "forbidden: bad or missing form token; reload the page", http.StatusForbidden)
+			return
+		}
+		if r.URL.Path == "/api/dismiss" {
+			s.dismiss(w, r)
 			return
 		}
 		e, ok := s.entry(w, r.PostForm.Get("project"))
@@ -500,6 +521,115 @@ func (s *Server) check(w http.ResponseWriter, r *http.Request, e Entry) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
+// RefreshSuggestions reads the recent sessions and keeps the folders they
+// ran in for the page. It takes seconds; the page shows the last result.
+func (s *Server) RefreshSuggestions(ctx context.Context) {
+	if s.o.Recent == nil {
+		return
+	}
+	rs, err := s.o.Recent(ctx)
+	var sg []Suggestion
+	if err == nil {
+		sg = Aggregate(ctx, rs, s.o.Suggest)
+	}
+	s.mu.Lock()
+	s.sugg, s.suggDone, s.suggErr = sg, true, ""
+	if err != nil {
+		s.suggErr = err.Error()
+	}
+	s.mu.Unlock()
+	if err != nil {
+		s.o.Log.Error("recent sessions", "err", err)
+	} else {
+		s.o.Log.Info("recent sessions", "sessions", len(rs), "folders", len(sg))
+	}
+}
+
+// StartSuggestions runs RefreshSuggestions now and then every interval
+// until ctx ends.
+func (s *Server) StartSuggestions(ctx context.Context, every time.Duration) {
+	if s.o.Recent == nil {
+		return
+	}
+	go func() {
+		for {
+			s.RefreshSuggestions(ctx)
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(every):
+			}
+		}
+	}()
+}
+
+// dismiss records a suggested folder as dismissed. Only a folder the page
+// currently suggests can be dismissed.
+func (s *Server) dismiss(w http.ResponseWriter, r *http.Request) {
+	if s.o.Dismiss == nil {
+		http.Error(w, "dismissing is not available", http.StatusNotFound)
+		return
+	}
+	dir := r.PostForm.Get("path")
+	s.mu.Lock()
+	known := slices.ContainsFunc(s.sugg, func(g Suggestion) bool { return g.Path == dir })
+	s.mu.Unlock()
+	if dir == "" || !known {
+		http.Error(w, fmt.Sprintf("%q is not a suggested folder; reload the page", Clean(dir)), http.StatusNotFound)
+		return
+	}
+	if err := s.o.Dismiss(dir); err != nil {
+		s.o.Log.Error("dismiss", "err", err)
+		http.Error(w, "could not save the dismissed folder: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	s.o.Log.Info("dismiss", "folder", dir)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+type suggestView struct {
+	Name, Path, Command, Tools, Last string
+	Sessions                         int
+}
+
+type suggestData struct {
+	Show, Pending, CanDismiss bool
+	Error                     string
+	Items                     []suggestView
+}
+
+// suggestions is the page's "not connected yet" section.
+func (s *Server) suggestions(es []Entry, now time.Time) suggestData {
+	if s.o.Recent == nil {
+		return suggestData{}
+	}
+	var dismissed []string
+	if s.o.Dismissed != nil {
+		var err error
+		if dismissed, err = s.o.Dismissed(); err != nil {
+			s.o.Log.Error("dismissed folders", "err", err)
+		}
+	}
+	s.mu.Lock()
+	d := suggestData{Pending: !s.suggDone, Error: s.suggErr, CanDismiss: s.o.Dismiss != nil}
+	sg := Unconnected(s.sugg, es, dismissed)
+	s.mu.Unlock()
+	for _, g := range sg {
+		d.Items = append(d.Items, suggestView{Name: g.Name, Path: g.Path, Command: connectCommand(g.Path),
+			Tools: strings.Join(g.Tools, ", "), Last: Age(now, g.Last), Sessions: g.Sessions})
+	}
+	d.Show = d.Pending || d.Error != "" || len(d.Items) > 0
+	return d
+}
+
+// connectCommand is the command that connects dir, quoted when needed.
+func connectCommand(dir string) string {
+	if strings.ContainsAny(dir, " '\"&;$`()") {
+		dir = strconv.Quote(dir)
+	}
+	return "cbrt projects connect " + dir
+}
+
 func (s *Server) page(w http.ResponseWriter, r *http.Request) {
 	es, err := s.o.Load()
 	if err != nil {
@@ -522,7 +652,7 @@ func (s *Server) page(w http.ResponseWriter, r *http.Request) {
 	}
 	s.mu.Unlock()
 	data := pageData{Cards: cs, Generated: t.Format("2006-01-02 15:04"), Empty: len(es) == 0, Token: s.o.Token, Agents: Agents,
-		Summary: summarize(cs, ss, t)}
+		Summary: summarize(cs, ss, t), Suggest: s.suggestions(es, t)}
 	var buf bytes.Buffer
 	if err := pageTmpl.Execute(&buf, data); err != nil {
 		s.o.Log.Error("render", "err", err)

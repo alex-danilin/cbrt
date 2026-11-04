@@ -22,7 +22,8 @@ const projectsUsage = `usage: cbrt projects [command]
 
   (none) | serve [--listen 127.0.0.1:8091] [--no-open]
         the overview page of all connected projects (loopback only); opens it
-        in the browser. Its forms park/unpark tasks in PLAN.md and start checks
+        in the browser. Its forms park/unpark tasks in PLAN.md and start checks;
+        it suggests folders with recent agent sessions that are not connected
   connect <dir> [--dry-run] [--public|--private] [--agent claude|codex|agy]
         track a project: git init if needed, PLAN.md, a README.md skeleton
         (with --agent, that agent writes its overview, headless and read-only),
@@ -222,9 +223,18 @@ func projectsServe(args []string, stdout, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 	home := projects.Home()
+	srv := projects.NewServer(projects.ServerOptions{
+		Load:      func() ([]projects.Entry, error) { return projects.Load(home) },
+		Recent:    recentSessions,
+		Dismissed: func() ([]string, error) { return projects.LoadDismissed(home) },
+		Dismiss:   func(dir string) error { return projects.Dismiss(home, dir) },
+	})
+	srv.StartSuggestions(ctx, 10*time.Minute)
 	hs := &http.Server{
-		Handler:           projects.Handler(func() ([]projects.Entry, error) { return projects.Load(home) }, nil, nil),
+		Handler:           srv,
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       60 * time.Second,
 	}
@@ -235,8 +245,6 @@ func projectsServe(args []string, stdout, stderr io.Writer) error {
 			fmt.Fprintf(stdout, "could not open the browser (%v); open the address above\n", err)
 		}
 	}
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
 	errc := make(chan error, 1)
 	go func() { errc <- hs.Serve(ln) }()
 	select {

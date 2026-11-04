@@ -61,33 +61,70 @@ type Entry struct {
 type listFile struct {
 	V        int     `json:"v"`
 	Projects []Entry `json:"projects"`
+	// Dismissed are folders whose suggestion the user dismissed on the page.
+	Dismissed []string `json:"dismissed,omitempty"`
+}
+
+// readList reads projects.json in home; a missing file is an empty list.
+func readList(home string) (listFile, error) {
+	b, err := os.ReadFile(filepath.Join(home, ListFile))
+	if errors.Is(err, fs.ErrNotExist) {
+		return listFile{V: listVersion}, nil
+	}
+	if err != nil {
+		return listFile{}, err
+	}
+	var f listFile
+	if err := json.Unmarshal(b, &f); err != nil {
+		return listFile{}, fmt.Errorf("%s: %w", ListFile, err)
+	}
+	if f.V > listVersion {
+		return listFile{}, fmt.Errorf("%s: version %d is newer than this cbrt understands (%d)", ListFile, f.V, listVersion)
+	}
+	return f, nil
+}
+
+func writeList(home string, f listFile) error {
+	if f.Projects == nil {
+		f.Projects = []Entry{}
+	}
+	f.V = listVersion
+	return state.WriteJSONAtomic(filepath.Join(home, ListFile), f)
 }
 
 // Load reads the project list in home; a missing file is an empty list.
 func Load(home string) ([]Entry, error) {
-	b, err := os.ReadFile(filepath.Join(home, ListFile))
-	if errors.Is(err, fs.ErrNotExist) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	var f listFile
-	if err := json.Unmarshal(b, &f); err != nil {
-		return nil, fmt.Errorf("%s: %w", ListFile, err)
-	}
-	if f.V > listVersion {
-		return nil, fmt.Errorf("%s: version %d is newer than this cbrt understands (%d)", ListFile, f.V, listVersion)
-	}
-	return f.Projects, nil
+	f, err := readList(home)
+	return f.Projects, err
 }
 
-// Save writes the project list atomically.
+// Save writes the project list atomically, keeping the dismissed folders.
 func Save(home string, es []Entry) error {
-	if es == nil {
-		es = []Entry{}
+	f, err := readList(home)
+	if err != nil {
+		return err
 	}
-	return state.WriteJSONAtomic(filepath.Join(home, ListFile), listFile{V: listVersion, Projects: es})
+	f.Projects = es
+	return writeList(home, f)
+}
+
+// LoadDismissed reads the folders whose suggestion the user dismissed.
+func LoadDismissed(home string) ([]string, error) {
+	f, err := readList(home)
+	return f.Dismissed, err
+}
+
+// Dismiss records dir as dismissed, once.
+func Dismiss(home, dir string) error {
+	f, err := readList(home)
+	if err != nil {
+		return err
+	}
+	if dismissedPath(dir, f.Dismissed) {
+		return nil
+	}
+	f.Dismissed = append(f.Dismissed, dir)
+	return writeList(home, f)
 }
 
 // Find returns the index of the entry named key, else of the entry whose

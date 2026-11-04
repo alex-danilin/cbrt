@@ -156,11 +156,21 @@ details[open] summary::before { transform: rotate(90deg); }
 .empty { color: var(--muted); grid-column: 1 / -1; padding: 40px 0; }
 code { font-size: 13px; background: var(--raise); padding: 2px 6px; border-radius: 6px; }
 
+/* not connected yet */
+.suggest { margin: 26px 32px 0; padding: 18px 22px; border: 1px solid var(--line); border-radius: var(--r-md);
+  background: rgba(255,255,255,.025); }
+.suggest .label span { margin-left: auto; text-transform: none; letter-spacing: 0; color: var(--muted); font-weight: 400; }
+.suggest .task span { color: var(--muted); }
+.suggest .task b { color: var(--fg); font-weight: 500; }
+.suggest code { display: inline-block; margin-top: 6px; overflow-wrap: anywhere; user-select: all; }
+.suggest .note { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+
 @media (max-width: 1000px) {
   .hero { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 720px) {
   .top, .hero, main { padding-left: 16px; padding-right: 16px; }
+  .suggest { margin-left: 16px; margin-right: 16px; }
   .top .right .pill { display: none; }
 }
 </style>
@@ -208,6 +218,12 @@ code { font-size: 13px; background: var(--raise); padding: 2px 6px; border-radiu
   </div>{{end}}
 </section>
 
+{{with .Suggest}}{{if .Show}}<section class="suggest" id="suggestions">
+  <div class="label">Not connected yet<span>agent sessions in the last 14 days</span></div>
+  {{if .Pending}}<p class="note">Looking for recent sessions… reload in a few seconds.</p>{{end}}
+  {{if .Error}}<div class="error">Could not read recent sessions: {{.Error}}</div>{{end}}
+  {{if .Items}}<ul class="tasks">{{range .Items}}<li class="task"><span><b>{{.Name}}</b> · {{.Sessions}} {{if eq .Sessions 1}}session{{else}}sessions{{end}} ({{.Tools}}), last {{.Last}}<br><code>{{.Command}}</code></span>{{if $.Suggest.CanDismiss}}<form method="post" action="/api/dismiss"><input type="hidden" name="token" value="{{$.Token}}"><input type="hidden" name="path" value="{{.Path}}"><button class="ghost" title="don't suggest this folder again">dismiss</button></form>{{end}}</li>{{end}}</ul>{{end}}
+</section>{{end}}{{end}}
 <main id="projects">
 {{if .Empty}}<p class="empty">No connected projects yet. Run <code>cbrt projects connect &lt;folder&gt;</code>.</p>{{end}}
 {{range $c := .Cards}}
