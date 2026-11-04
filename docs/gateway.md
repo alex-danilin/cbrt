@@ -43,7 +43,7 @@ From source: `go run ./cmd/cbrt serve`, or `go run scripts/build.go` to build `d
 
 ### OpenAI-compatible clients
 
-Base URL `http://127.0.0.1:8080/v1`. Model = a route name (e.g. `default`) or `provider:model` (e.g. `ollama:gemma-4-e2b-4-32k`).
+Base URL `http://127.0.0.1:8080/v1`. Model = a route name (e.g. `default`) or `provider:model` (e.g. `ollama:gemma-4-e2b-4-32k`). A route fails over along its targets; a `provider:model` request has that one target and never fails over to another model, so you always get the model you asked for or an error. A route whose name or glob matches the string is checked first and wins.
 
 ```sh
 curl -si http://127.0.0.1:8080/v1/chat/completions -H 'Content-Type: application/json' \
