@@ -54,7 +54,7 @@ var safeAntigravityModes = set("default", "acceptEdits", "plan")
 // order name, description, body, then a.Fields.
 func Plan(a Agent, t Tool) []Note {
 	notes := []Note{
-		nameNote(a, t),
+		{"name", Kept, ""},
 		{"description", Kept, ""},
 		{"body", Kept, ""},
 	}
@@ -67,13 +67,6 @@ func Plan(a Agent, t Tool) []Note {
 		notes = append(notes, n)
 	}
 	return notes
-}
-
-func nameNote(a Agent, t Tool) Note {
-	if t == Codex && strings.Contains(a.Name, "-") {
-		return Note{"name", Kept, "hyphens in Codex agent names are not yet probed"}
-	}
-	return Note{"name", Kept, ""}
 }
 
 func fieldNote(f Field, t Tool) Note {
