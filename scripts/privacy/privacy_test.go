@@ -27,12 +27,12 @@ const repoRoot = "../.."
 // local folders, and this package, whose self-test plants fake leaks.
 var skipDirs = map[string]bool{
 	".git": true, ".gotmp": true, ".claude": true, "captures": true, "data": true, "dist": true,
-	"docs/internal": true, "scripts/privacy": true, ".cbrt": true, "external-verification": true,
+	"docs/internal": true, "scripts/privacy": true, ".cbrt": true, "external-verification": true, "experiments": true,
 }
 
 // skipFiles are git-ignored local files that hold personal values by design,
 // and .git, which is a file (with an absolute gitdir path) in a worktree.
-var skipFiles = map[string]bool{".git": true, ".env": true, ".privacy-terms": true, "cbrt.json": true, "AGENTS.md": true, "CLAUDE.md": true, "PLAN.md": true}
+var skipFiles = map[string]bool{".git": true, ".env": true, ".privacy-terms": true, "cbrt.json": true, "AGENTS.md": true, "CLAUDE.md": true, "PLAN.md": true, "ROADMAP.md": true}
 
 var (
 	// UUIDs other than the sanitizer's placeholders. Version 7 (time-ordered
