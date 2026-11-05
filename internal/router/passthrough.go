@@ -21,7 +21,9 @@ const unifiedPrefix = "Anthropic-Ratelimit-Unified-"
 //
 //   - 429 with anthropic-ratelimit-unified-* headers: the plan's usage limit.
 //     Quota, cooling until the reset those headers report.
-//   - 429 without them: a temporary throttle, cooling for Retry-After.
+//   - 429 without them: a temporary throttle. It goes back to the client,
+//     which retries with backoff as it does without a gateway; no cooldown,
+//     so one throttled side request never moves the session to a free model.
 //   - 402, or a 400/403 that talks about credit or billing (API-key accounts):
 //     quota, cooling for quotaCooldown.
 //   - 408, 5xx and 529 (overloaded): as Classify does.
@@ -39,7 +41,8 @@ func ClassifyPassthrough(status int, h http.Header, body []byte, quotaCooldown t
 	case status == http.StatusTooManyRequests && planLimited(h):
 		v.Class, v.Scope, v.Cooldown = QuotaExhausted, ScopeProvider, planReset(h, quotaCooldown)
 	case status == http.StatusTooManyRequests:
-		v.Class, v.Scope, v.Cooldown = RateLimited, ScopeProvider, retryAfter(h)
+		v.Class = RateLimited
+		return v, false
 	case status == http.StatusPaymentRequired,
 		(status == http.StatusBadRequest || status == http.StatusForbidden) && quotaRE.Match(matched):
 		v.Class, v.Scope, v.Cooldown = QuotaExhausted, ScopeProvider, quotaCooldown

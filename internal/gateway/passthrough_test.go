@@ -330,17 +330,24 @@ func TestPassthroughPlanLimitFailsOverUntilReset(t *testing.T) {
 	}
 }
 
-func TestPassthroughThrottleCoolsBriefly(t *testing.T) {
-	a := newAnthropicFake(t, anthropicError(429, `{"type":"error","error":{"type":"rate_limit_error","message":"slow down"}}`, "Retry-After", "7"))
+// A throttle (429 without the plan-limit headers) goes back to Claude Code,
+// which retries it with backoff as it does without a gateway. It neither fails
+// over nor cools Anthropic: one throttled side request at startup used to move
+// the whole session to a free model.
+func TestPassthroughThrottleRelayed(t *testing.T) {
+	const body = `{"type":"error","error":{"type":"rate_limit_error","message":"slow down"}}`
+	a := newAnthropicFake(t, anthropicError(429, body, "Retry-After", "7"))
 	b := newFake(t, okJSON("free"))
 	e := newPassEnv(t, a, b)
-	resp, _ := e.send(t, claudeBodyJSON(t))
-	if resp.StatusCode != 200 || b.calls.Load() != 1 {
-		t.Fatalf("status %d, free calls %d", resp.StatusCode, b.calls.Load())
+	resp, got := e.send(t, claudeBodyJSON(t))
+	if resp.StatusCode != 429 || string(got) != body || resp.Header.Get("Retry-After") != "7" {
+		t.Fatalf("got %d %s, Retry-After %q", resp.StatusCode, got, resp.Header.Get("Retry-After"))
 	}
-	chk := e.health.Check("anthropic", "anthropic:*")
-	if chk.Reason != router.RateLimited || chk.Until.Sub(e.clock.now()) > 8*time.Second {
-		t.Fatalf("throttle cooldown: %+v", chk)
+	if b.calls.Load() != 0 {
+		t.Fatalf("free calls %d, want 0", b.calls.Load())
+	}
+	if chk := e.health.Check("anthropic", "anthropic:*"); !chk.OK {
+		t.Fatalf("anthropic must not cool on a throttle: %+v", chk)
 	}
 }
 
