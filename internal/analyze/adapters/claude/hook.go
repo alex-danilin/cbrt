@@ -11,8 +11,8 @@ import (
 // hookInput is the part of Claude Code's hook stdin the adapter reads.
 type hookInput struct {
 	SessionID string          `json:"session_id"`
-	Model     json.RawMessage `json:"model"` // a string, or an object with an id
-	Effort    string          `json:"effort"`
+	Model     json.RawMessage `json:"model"`  // a string, or an object with an id
+	Effort    json.RawMessage `json:"effort"` // a string, or an object with a level
 	ToolName  string          `json:"tool_name"`
 	ToolInput json.RawMessage `json:"tool_input"`
 	ToolUseID string          `json:"tool_use_id"`
@@ -54,7 +54,7 @@ func (Adapter) NormalizeHook(env analyze.Envelope) ([]analyze.Event, error) {
 		NativeSessionID: in.SessionID,
 		Seq:             "registry:" + filepath.Base(env.File),
 		TS:              env.RecordedAt.UTC(), Kind: kind, ObservedBy: analyze.FromRegistry,
-		Model: hookModel(in.Model), Effort: in.Effort,
+		Model: hookModel(in.Model), Effort: analyze.EffortLevel(in.Effort),
 		BranchCoverage: analyze.Unknown, DurationCoverage: analyze.Unknown,
 	}
 	if env.File == "" {

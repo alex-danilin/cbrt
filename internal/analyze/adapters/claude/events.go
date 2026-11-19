@@ -32,7 +32,7 @@ type record struct {
 	IsCompactSummary bool                   `json:"isCompactSummary"`
 	IsAPIError       bool                   `json:"isApiErrorMessage"`
 	RequestID        string                 `json:"requestId"`
-	Effort           string                 `json:"effort"`
+	Effort           json.RawMessage        `json:"effort"` // a string, or an object with a level
 	Level            string                 `json:"level"`
 	ToolDenialKind   string                 `json:"toolDenialKind"`
 	PromptSource     string                 `json:"promptSource"`
@@ -221,7 +221,7 @@ func (p *parser) base(l line, k analyze.Kind) analyze.Event {
 		Tool: adapterID, Store: p.store, Origin: origin(l.rec.Entrypoint),
 		NativeSessionID: p.sid, ParentSessionID: p.parent,
 		TS: l.ts, Kind: k, ObservedBy: analyze.FromTranscript,
-		Effort: l.rec.Effort, Cwd: l.rec.Cwd,
+		Effort: analyze.EffortLevel(l.rec.Effort), Cwd: l.rec.Cwd,
 		BranchCoverage: analyze.Unknown, DurationCoverage: analyze.Unknown,
 	}
 	if b := l.rec.GitBranch; b != "" {

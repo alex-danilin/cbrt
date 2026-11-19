@@ -185,6 +185,27 @@ func problemReason(err error, paths ...string) string {
 	return msg
 }
 
+// hookReason is why an adapter could not read a spooled hook, for the problem
+// list. A JSON decoding error is reduced to its shape (the field and the
+// types, or the byte offset), because its message can quote a fragment of the
+// hook's stdin (a number, a character).
+func hookReason(err error) string {
+	var te *json.UnmarshalTypeError
+	if errors.As(err, &te) {
+		got, _, _ := strings.Cut(te.Value, " ") // "number 12" -> "number"
+		field := te.Field
+		if field == "" {
+			field = "(top level)"
+		}
+		return fmt.Sprintf("field %s is a JSON %s, expected %s", field, got, te.Type)
+	}
+	var se *json.SyntaxError
+	if errors.As(err, &se) {
+		return fmt.Sprintf("stdin is not valid JSON (byte %d)", se.Offset)
+	}
+	return problemReason(err)
+}
+
 // baseName is the last element of a path written with either separator.
 func baseName(p string) string {
 	parts := strings.FieldsFunc(p, func(r rune) bool { return r == '/' || r == '\\' })
@@ -239,7 +260,7 @@ func (c *collector) readRegistry() error {
 		}
 		evs, err := a.NormalizeHook(env)
 		if err != nil {
-			c.problems = append(c.problems, "registry: "+name+": not understood by "+a.ID())
+			c.problems = append(c.problems, "registry: "+name+": not understood by "+a.ID()+": "+hookReason(err))
 			continue
 		}
 		for _, e := range evs {

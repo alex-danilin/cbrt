@@ -36,10 +36,10 @@ type payload struct {
 	} `json:"git"`
 
 	// turn_context, task_started, task_complete, turn_aborted
-	Cwd    string `json:"cwd"` // session_meta, turn_context
-	TurnID string `json:"turn_id"`
-	Model  string `json:"model"`
-	Effort string `json:"effort"`
+	Cwd    string          `json:"cwd"` // session_meta, turn_context
+	TurnID string          `json:"turn_id"`
+	Model  string          `json:"model"`
+	Effort json.RawMessage `json:"effort"` // a string, or an object with a level
 
 	// event_msg user_message / agent_message / error
 	Message string `json:"message"`
@@ -330,7 +330,7 @@ func (p *parser) record(r *record, line int) error {
 		if pl.Model != "" {
 			p.model = pl.Model
 		}
-		p.effort = pl.Effort
+		p.effort = analyze.EffortLevel(pl.Effort)
 		if pl.Cwd != "" {
 			p.cwd = pl.Cwd
 		}

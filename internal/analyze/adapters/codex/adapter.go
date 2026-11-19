@@ -46,7 +46,7 @@ func init() { analyze.Register(Adapter{}) }
 func (Adapter) ID() string { return ID }
 
 // Version changes whenever parsing or normalization changes.
-func (Adapter) Version() string { return "3" }
+func (Adapter) Version() string { return "4" }
 
 func (Adapter) DiscoveryRoots() []string { return []string{"~/.codex/sessions"} }
 

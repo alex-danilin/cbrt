@@ -34,7 +34,7 @@ const (
 )
 
 func (Adapter) ID() string      { return adapterID }
-func (Adapter) Version() string { return "3" }
+func (Adapter) Version() string { return "4" }
 
 func (Adapter) DiscoveryRoots() []string { return []string{"~/.claude/projects"} }
 

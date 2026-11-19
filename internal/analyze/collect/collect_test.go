@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -660,6 +661,31 @@ func TestDeterministic(t *testing.T) {
 	}
 	if find(ds, "fixturetool", "fake-fixture-session") == nil {
 		t.Error("hooks-only tool session missing")
+	}
+}
+
+// A hook the adapter rejects is reported with the reason, but JSON decoding
+// errors never quote the stdin (a number's value, a character).
+func TestHookReason(t *testing.T) {
+	var s struct {
+		Effort string `json:"effort"`
+	}
+	typeErr := json.Unmarshal([]byte(`{"effort":{"level":"high"}}`), &s)
+	numErr := json.Unmarshal([]byte(`{"effort":987654}`), &s)
+	synErr := json.Unmarshal([]byte(`{"effort":Zq}`), &s)
+	cases := []struct {
+		err  error
+		want string
+	}{
+		{fmt.Errorf("claude: hook Stop stdin: %w", typeErr), "field effort is a JSON object, expected string"},
+		{fmt.Errorf("claude: hook Stop stdin: %w", numErr), "field effort is a JSON number, expected string"},
+		{fmt.Errorf("claude: hook Stop stdin: %w", synErr), "stdin is not valid JSON (byte 11)"},
+		{errors.New("claude: hook stdin has no session_id"), "claude: hook stdin has no session_id"},
+	}
+	for _, c := range cases {
+		if got := hookReason(c.err); got != c.want {
+			t.Errorf("hookReason(%v) = %q, want %q", c.err, got, c.want)
+		}
 	}
 }
 

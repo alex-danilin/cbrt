@@ -181,6 +181,26 @@ func TextVolume(s string) int {
 	return (n + 3) / 4
 }
 
+// EffortLevel reads a tool's reasoning effort, sent either as a plain string
+// or as an object with a level ({"level": "high"}). Anything else, including
+// null or an absent field, is "".
+func EffortLevel(raw json.RawMessage) string {
+	if len(raw) == 0 {
+		return ""
+	}
+	var s string
+	if json.Unmarshal(raw, &s) == nil {
+		return s
+	}
+	var o struct {
+		Level string `json:"level"`
+	}
+	if json.Unmarshal(raw, &o) == nil {
+		return o.Level
+	}
+	return ""
+}
+
 // ArgsHash is the hex sha1 of a tool call's arguments in canonical form
 // (object keys sorted, insignificant whitespace removed); raw bytes when the
 // arguments are not JSON.

@@ -345,6 +345,36 @@ func TestNormalizeHook(t *testing.T) {
 	}
 }
 
+// Claude Code sends effort as {"level": ...} on Stop and PermissionRequest;
+// older versions sent a plain string. Both must decode to the level.
+func TestNormalizeHookEffort(t *testing.T) {
+	at := time.Date(2026, 3, 2, 12, 0, 0, 0, time.UTC)
+	perm := `,"tool_name":"Bash","tool_input":{"command":"go vet ./..."},"tool_use_id":"toolu_fake_s1_03"`
+	cases := []struct {
+		event, extra, effort, want string
+	}{
+		{"Stop", `,"stop_hook_active":false`, `"high"`, "high"},
+		{"Stop", `,"stop_hook_active":false`, `{"level":"xhigh"}`, "xhigh"},
+		{"PermissionRequest", perm, `"medium"`, "medium"},
+		{"PermissionRequest", perm, `{"level":"low"}`, "low"},
+		{"Stop", "", `{}`, ""},
+		{"Stop", "", `null`, ""},
+	}
+	for _, c := range cases {
+		stdin := `{"session_id":"` + s1 + `"` + c.extra + `,"effort":` + c.effort + `}`
+		evs, err := Adapter{}.NormalizeHook(analyze.Envelope{V: 1, AdapterID: "claude", Event: c.event, RecordedAt: at, Stdin: stdin})
+		if err != nil || len(evs) != 1 {
+			t.Fatalf("%s %s: %v %v", c.event, c.effort, evs, err)
+		}
+		if evs[0].Effort != c.want {
+			t.Errorf("%s %s: effort %q, want %q", c.event, c.effort, evs[0].Effort, c.want)
+		}
+		if c.event == "PermissionRequest" && (evs[0].ToolName != analyze.ToolShell || evs[0].CorrelationID != "toolu_fake_s1_03") {
+			t.Errorf("%s %s: %+v", c.event, c.effort, evs[0])
+		}
+	}
+}
+
 func TestNormalizeTool(t *testing.T) {
 	for raw, want := range map[string]string{
 		"Read": analyze.ToolReadFile, "Grep": analyze.ToolSearch, "Glob": analyze.ToolSearch,

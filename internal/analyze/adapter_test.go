@@ -57,6 +57,16 @@ func TestRegister(t *testing.T) {
 	Register(stub{"stub-a"})
 }
 
+func TestEffortLevel(t *testing.T) {
+	for raw, want := range map[string]string{
+		``: "", `null`: "", `"high"`: "high", `{"level":"max"}`: "max", `{"other":1}`: "", `{}`: "", `42`: "", `[]`: "",
+	} {
+		if got := EffortLevel([]byte(raw)); got != want {
+			t.Errorf("EffortLevel(%s) = %q, want %q", raw, got, want)
+		}
+	}
+}
+
 func TestArgsHashCanonical(t *testing.T) {
 	a := ArgsHash([]byte(`{"b":1, "a":{"y":2,"x":[1, 2]}}`))
 	b := ArgsHash([]byte(`{"a":{"x":[1,2],"y":2},"b":1}`))
