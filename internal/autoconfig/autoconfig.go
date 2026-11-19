@@ -85,9 +85,13 @@ type model struct {
 	Source    string  // where Effective came from
 }
 
+// ErrNoProvider is Generate's error when nothing can serve the default route:
+// no NVIDIA key and no Ollama chat model.
+var ErrNoProvider = errors.New("no usable provider: set NVIDIA_API_KEY (free key at https://build.nvidia.com), or start Ollama (the Ollama app or `ollama serve`) with a chat model pulled (e.g. `ollama pull qwen3`)")
+
 // Generate probes Ollama (if reachable) and returns a cbrt.json document that
 // config.Parse accepts, plus a report. It fails only when there is no usable
-// provider at all.
+// provider at all, with ErrNoProvider (the report is complete then too).
 func Generate(ctx context.Context, o Options) ([]byte, Report, error) {
 	var rep Report
 	client := o.Client
@@ -165,7 +169,7 @@ func Generate(ctx context.Context, o Options) ([]byte, Report, error) {
 	}
 
 	if len(d.Routes["default"]) == 0 {
-		return nil, rep, errors.New("no usable provider: set NVIDIA_API_KEY (free key at https://build.nvidia.com), or start Ollama (the Ollama app or `ollama serve`) with a chat model pulled (e.g. `ollama pull qwen3`)")
+		return nil, rep, ErrNoProvider
 	}
 	for _, name := range []string{"default", "claude-*", "coder", "vision"} {
 		if ts, ok := d.Routes[name]; ok {

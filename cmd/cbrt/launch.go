@@ -167,13 +167,13 @@ func (l *launcher) run(ctx context.Context) (int, error) {
 	env := config.NewEnvFile(l.envFile())
 	var base loader
 	var warnings []string // from the first detection; read after the gateway is ready
+	o := l.detect
+	if o.DataDir == "" {
+		o.DataDir = filepath.Join(l.dir, "data")
+	}
 	if cfgPath != "" {
 		base = fileLoader(env, cfgPath)
 	} else {
-		o := l.detect
-		if o.DataDir == "" {
-			o.DataDir = filepath.Join(l.dir, "data")
-		}
 		first := true
 		base = zeroLoader(env, o, func(rep autoconfig.Report) {
 			logReport(log, rep)
@@ -188,15 +188,34 @@ func (l *launcher) run(ctx context.Context) (int, error) {
 	var dataDir string // claimed on the first load and kept for reloads
 	release := func() {}
 	defer func() { release() }()
+	// warnOnce reports a problem of the configuration: on the terminal from the
+	// first load, in the log from every load.
+	warnOnce := func(note string) {
+		if initial == nil {
+			warnings = append(warnings, note)
+		}
+		log.Warn(note)
+	}
 	load := func() (*config.Config, error) {
 		c, err := base()
+		if l.subscription && cfgPath == "" && errors.Is(err, autoconfig.ErrNoProvider) {
+			// Claude Code still has the user's own plan: serve it alone.
+			c, err = planOnly(o.DataDir, info.route)
+			if err == nil {
+				warnOnce("no free models found: Claude Code runs on your plan only, and nothing takes over at its limit (set NVIDIA_API_KEY or start Ollama for a fallback)")
+			}
+		}
 		if err != nil {
 			return nil, err
 		}
 		loopbackOnly(c)
 		if l.subscription {
-			if err := addSubscription(c, info.route); err != nil {
+			created, err := addSubscription(c, info.route)
+			if err != nil {
 				return nil, err
+			}
+			if created {
+				warnOnce(fmt.Sprintf("the config has no %q route: Claude Code runs on your plan only, and nothing takes over at its limit (add free targets to that route for a fallback)", info.route))
 			}
 		} else if dropped := dropPassthrough(c); dropped {
 			if initial == nil {
@@ -371,7 +390,17 @@ func (l *launcher) summary(source string, cfg *config.Config, route string, maxC
 		fmt.Fprintf(w, "cbrt: route %s → %s%s\n", name, strings.Join(keys, ", "), ctx)
 	}
 	if l.subscription {
-		fmt.Fprintln(w, "cbrt: subscription: Claude Code uses your own Claude login; the free targets take over at your plan's limit")
+		fallback := false
+		for _, t := range ts {
+			if p, ok := cfg.Provider(t.Provider); ok && !p.Passthrough() {
+				fallback = true
+			}
+		}
+		if fallback {
+			fmt.Fprintln(w, "cbrt: subscription: Claude Code uses your own Claude login; the free targets take over at your plan's limit")
+		} else {
+			fmt.Fprintln(w, "cbrt: subscription: Claude Code uses your own Claude login only")
+		}
 	}
 	fmt.Fprintf(w, "cbrt: dashboard %s/  log %s\n", baseURL, l.logPath())
 	for _, x := range warnings {
@@ -488,13 +517,34 @@ func claudeEnv(orig []string, baseURL string, maxCtx int, goos string, subscript
 // subscriptionProvider is the passthrough provider --subscription adds.
 const subscriptionProvider = "anthropic"
 
+// anthropicBaseURL is where that provider relays to (a variable for tests).
+var anthropicBaseURL = "https://api.anthropic.com"
+
+// planOnly is the configuration for --subscription when detection found no
+// free provider: Anthropic passthrough alone in the route Claude Code uses.
+func planOnly(dataDir, route string) (*config.Config, error) {
+	doc, err := json.Marshal(map[string]any{
+		"listen":   "127.0.0.1:0",
+		"data_dir": dataDir,
+		"providers": []map[string]string{{"id": subscriptionProvider, "type": "anthropic",
+			"location": "cloud", "base_url": anthropicBaseURL}},
+		"routes": map[string][]string{route: {subscriptionProvider + ":*"}},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return config.Parse(doc)
+}
+
 // addSubscription puts Anthropic passthrough first in the route Claude Code
 // uses (adding the provider unless the config has one), so the user's plan
-// serves first and the configured targets take over at its limit.
-func addSubscription(c *config.Config, route string) error {
+// serves first and the configured targets take over at its limit. A config
+// without that route gets it with the passthrough alone (created is then true):
+// nothing takes over at the limit, but every Claude Code request is served.
+func addSubscription(c *config.Config, route string) (created bool, err error) {
 	name, ts := routeTargets(c, route)
 	if name == "" {
-		return fmt.Errorf("--subscription: the config has no %q route to put Anthropic in front of", route)
+		name, created = route, true
 	}
 	id := ""
 	for _, p := range c.Providers {
@@ -507,10 +557,10 @@ func addSubscription(c *config.Config, route string) error {
 		id = subscriptionProvider
 		for _, p := range c.Providers {
 			if p.ID == id {
-				return fmt.Errorf("--subscription: provider id %q is taken by a provider of type %s", id, p.Type)
+				return false, fmt.Errorf("--subscription: provider id %q is taken by a provider of type %s", id, p.Type)
 			}
 		}
-		c.Providers = append(c.Providers, config.Provider{ID: id, Type: "anthropic", Location: "cloud", BaseURL: "https://api.anthropic.com"})
+		c.Providers = append(c.Providers, config.Provider{ID: id, Type: "anthropic", Location: "cloud", BaseURL: anthropicBaseURL})
 	}
 	present := false
 	for _, t := range ts {
@@ -519,7 +569,7 @@ func addSubscription(c *config.Config, route string) error {
 	if !present {
 		c.Routes[name] = append([]config.Target{{Provider: id, Model: "*"}}, ts...)
 	}
-	return c.Validate()
+	return created, c.Validate()
 }
 
 // dropPassthrough removes passthrough targets from every route. Without

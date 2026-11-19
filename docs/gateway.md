@@ -15,6 +15,7 @@ Claude Code keeps your own login (a claude.ai sign-in or your API key) and its r
 - **Context:** `CLAUDE_CODE_MAX_CONTEXT_TOKENS` is still set to the smallest free target's context, so a long conversation fits the fallback. That makes Claude Code compact earlier on your plan too.
 - **Only the plan limit switches.** A 429 that carries Anthropic's plan-limit headers (`anthropic-ratelimit-unified-*`, status `rejected`) moves the session to the free targets until the reset they report. A 429 without them is a short throttle: it goes back to Claude Code, which retries it as it does without a gateway, and Anthropic stays in use.
 - **After a switch back** Claude Code may get one rejected request about thinking blocks from the free model's turns; it drops them and retries by itself.
+- **No free models needed.** With no NVIDIA key and no Ollama, or a `cbrt.json` without a `claude-*` route, Claude Code runs on your plan alone (cbrt warns that nothing takes over at the limit). Set `NVIDIA_API_KEY` or start Ollama for a fallback; a reload picks it up.
 - In a `cbrt.json`: `{"id": "anthropic", "type": "anthropic"}` as a provider and `"anthropic:*"` first in the `claude-*` route.
 
 ## Running the gateway

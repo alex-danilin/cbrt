@@ -7,12 +7,14 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"reflect"
 	"runtime"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -31,6 +33,7 @@ type fakeReport struct {
 	Healthz  int      `json:"healthz"`
 	Messages int      `json:"messages"`
 	Body     string   `json:"body"`
+	Reload   int      `json:"reload"`
 }
 
 // fakeClientMain is the fake claude/codex: it finds the gateway from the
@@ -47,6 +50,12 @@ func fakeClientMain() int {
 	if resp, err := c.Get(rep.Base + "/healthz"); err == nil {
 		rep.Healthz = resp.StatusCode
 		resp.Body.Close()
+	}
+	if os.Getenv("CBRT_TEST_FAKE_RELOAD") != "" { // re-run the loader before calling the model
+		if resp, err := c.Post(rep.Base+"/api/reload", "application/json", nil); err == nil {
+			rep.Reload = resp.StatusCode
+			resp.Body.Close()
+		}
 	}
 	if os.Getenv("ANTHROPIC_BASE_URL") != "" {
 		req, _ := http.NewRequest("POST", rep.Base+"/v1/messages",
@@ -339,7 +348,7 @@ func TestAddSubscription(t *testing.T) {
 		return c
 	}
 	c := parse(`{"providers":[{"id":"o","type":"ollama","location":"local"}],"routes":{"claude-*":["o:m"],"coder":["o:m"]}}`)
-	if err := addSubscription(c, "claude-*"); err != nil {
+	if created, err := addSubscription(c, "claude-*"); err != nil || created {
 		t.Fatal(err)
 	}
 	if got := c.Routes["claude-*"]; len(got) != 2 || got[0].Key() != "anthropic:*" || got[1].Key() != "o:m" {
@@ -352,17 +361,131 @@ func TestAddSubscription(t *testing.T) {
 		t.Error("other routes changed")
 	}
 	// idempotent: a reload of an already-extended config adds nothing
-	if err := addSubscription(c, "claude-*"); err != nil || len(c.Routes["claude-*"]) != 2 || len(c.Providers) != 2 {
+	if _, err := addSubscription(c, "claude-*"); err != nil || len(c.Routes["claude-*"]) != 2 || len(c.Providers) != 2 {
 		t.Fatalf("second add: %v %v", err, c.Routes["claude-*"])
 	}
 
-	if err := addSubscription(parse(`{"providers":[{"id":"o","type":"ollama","location":"local"}],"routes":{"coder":["o:m"]}}`), "claude-*"); err == nil {
-		t.Error("no claude route: want an error")
+	// No claude route: it is created with the passthrough alone, and other routes stay.
+	bare := parse(`{"providers":[{"id":"o","type":"ollama","location":"local"}],"routes":{"coder":["o:m"]}}`)
+	if created, err := addSubscription(bare, "claude-*"); err != nil || !created {
+		t.Fatalf("no claude route: created %v, err %v", created, err)
+	}
+	if got := bare.Routes["claude-*"]; len(got) != 1 || got[0].Key() != "anthropic:*" || len(bare.Routes["coder"]) != 1 {
+		t.Fatalf("routes %v", bare.Routes)
+	}
+	if created, err := addSubscription(bare, "claude-*"); err != nil || created || len(bare.Routes["claude-*"]) != 1 {
+		t.Fatalf("second add: created %v, err %v, route %v", created, err, bare.Routes["claude-*"])
 	}
 	taken := parse(`{"providers":[{"id":"anthropic","type":"ollama","location":"local"}],"routes":{"claude-*":["anthropic:m"]}}`)
-	if err := addSubscription(taken, "claude-*"); err == nil || !strings.Contains(err.Error(), "taken") {
+	if _, err := addSubscription(taken, "claude-*"); err == nil || !strings.Contains(err.Error(), "taken") {
 		t.Errorf("taken id: %v", err)
 	}
+}
+
+// planOnly serves every model name Claude Code sends (main, Haiku background,
+// Opus) through the passthrough, and addSubscription leaves it as it is.
+func TestPlanOnly(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "data")
+	c, err := planOnly(dir, "claude-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.DataDir != dir {
+		t.Errorf("data dir %q", c.DataDir)
+	}
+	for _, m := range []string{"claude-sonnet-4-5", "claude-haiku-4-5-20251001", "claude-opus-4-1", "claude-sonnet-4-5[1m]"} {
+		name, ts := routeTargets(c, m)
+		if name != "claude-*" || len(ts) != 1 || ts[0].Key() != "anthropic:*" {
+			t.Errorf("%s: route %q %v", m, name, ts)
+		}
+	}
+	loopbackOnly(c)
+	if created, err := addSubscription(c, "claude-*"); err != nil || created || len(c.Routes["claude-*"]) != 1 || len(c.Providers) != 1 {
+		t.Errorf("addSubscription on planOnly: created %v, err %v, %v", created, err, c.Routes)
+	}
+}
+
+// With --subscription and no free provider at all, Claude Code still runs, on
+// the user's plan alone, also after a reload; without it detection fails as before.
+func TestLauncherSubscriptionWithoutFreeModels(t *testing.T) {
+	detectEnv(t)
+	var gotAuth atomic.Value
+	anth := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotAuth.Store(r.Header.Get("Authorization"))
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"id":"msg_1","type":"message","role":"assistant","model":"claude-sonnet-4-5","content":[{"type":"text","text":"from the plan"}],"stop_reason":"end_turn","usage":{"input_tokens":3,"output_tokens":3}}`))
+	}))
+	defer anth.Close()
+	prev := anthropicBaseURL
+	anthropicBaseURL = anth.URL
+	t.Cleanup(func() { anthropicBaseURL = prev })
+	dead := httptest.NewServer(http.NotFoundHandler())
+	dead.Close()
+
+	newL := func(t *testing.T, subscription bool) (*launcher, *bytes.Buffer, string) {
+		tmp := t.TempDir()
+		outPath := filepath.Join(tmp, "fake.json")
+		cwd := filepath.Join(tmp, "project")
+		os.Mkdir(cwd, 0o700)
+		var stderr bytes.Buffer
+		return &launcher{
+			client: "claude", subscription: subscription, args: []string{"-p", "hi"},
+			environ: append(os.Environ(), fakeClientEnv+"=1", "CBRT_TEST_FAKE_OUT="+outPath, "CBRT_TEST_FAKE_EXIT=0",
+				"CBRT_TEST_FAKE_RELOAD=1", "ANTHROPIC_AUTH_TOKEN=users-own-login", "CBRT_ENV_FILE="+filepath.Join(tmp, "no.env")),
+			goos: runtime.GOOS, cwd: cwd, dir: filepath.Join(tmp, "ucd", "cbrt"), exe: "cbrt",
+			lookPath: func(string) (string, error) { return os.Args[0], nil },
+			stdin:    strings.NewReader(""), stdout: &bytes.Buffer{}, stderr: &stderr,
+			detect: autoconfig.Options{OllamaURL: dead.URL},
+		}, &stderr, outPath
+	}
+
+	t.Run("subscription", func(t *testing.T) {
+		l, stderr, outPath := newL(t, true)
+		if _, err := l.run(context.Background()); err != nil {
+			t.Fatalf("run: %v\nstderr:\n%s", err, stderr)
+		}
+		b, err := os.ReadFile(outPath)
+		if err != nil {
+			t.Fatalf("fake client did not run: %v\nstderr:\n%s", err, stderr)
+		}
+		var rep fakeReport
+		if err := json.Unmarshal(b, &rep); err != nil {
+			t.Fatal(err)
+		}
+		if rep.Reload != http.StatusOK {
+			t.Errorf("reload: %d", rep.Reload)
+		}
+		if rep.Messages != http.StatusOK || !strings.Contains(rep.Body, "from the plan") {
+			t.Errorf("/v1/messages: %d %s", rep.Messages, rep.Body)
+		}
+		if a, _ := gotAuth.Load().(string); a != "Bearer users-own-login" {
+			t.Errorf("Anthropic got Authorization %q, want the user's own", a)
+		}
+		out := stderr.String()
+		for _, want := range []string{"route claude-* → anthropic:*", "own Claude login only", "warning: NVIDIA_API_KEY is not set", "warning: Ollama is not reachable",
+			"warning: no free models found: Claude Code runs on your plan only"} {
+			if !strings.Contains(out, want) {
+				t.Errorf("summary lacks %q:\n%s", want, out)
+			}
+		}
+		if n := strings.Count(out, "no free models found"); n != 1 {
+			t.Errorf("plan-only warning printed %d times (the reload's goes to the log):\n%s", n, out)
+		}
+		if strings.Contains(out, "free targets take over") {
+			t.Errorf("summary promises a fallback that does not exist:\n%s", out)
+		}
+	})
+
+	t.Run("without subscription", func(t *testing.T) {
+		l, stderr, _ := newL(t, false)
+		_, err := l.run(context.Background())
+		if err == nil || !errors.Is(err, autoconfig.ErrNoProvider) || !strings.Contains(err.Error(), "no usable provider") {
+			t.Fatalf("err = %v\nstderr:\n%s", err, stderr)
+		}
+		if strings.Contains(stderr.String(), "no free models found") {
+			t.Errorf("plan-only warning without --subscription:\n%s", stderr)
+		}
+	})
 }
 
 func TestSubscriptionFlag(t *testing.T) {
